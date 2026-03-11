@@ -489,7 +489,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
       <input class="code-input" maxlength="1" id="ci5" oninput="codeNext(5)" onkeydown="codePrev(event,5)">
     </div>
     <div id="al-confirm" class="al a-e" style="text-align:left"><span>⚠️</span><span id="al-confirm-msg"></span></div>
-    <button class="btn-auth btn-primary" onclick="doConfirmCode()">
+    <button class="btn-auth btn-primary" id="btn-confirm" onclick="doConfirmCode()">
       <span id="confirm-spinner" style="display:none" class="spinner"></span>
       <span id="confirm-txt">Confirmar</span>
     </button>
@@ -811,8 +811,13 @@ async function doConfirmCode(){
   const code = [0,1,2,3,4,5].map(i=>$('ci'+i).value).join('');
   if(code.length < 6){ showAl('al-confirm','Digite os 6 dígitos'); return; }
   hideAl('al-confirm');
-  setLoading('btn-confirm','confirm-spinner','confirm-txt',true,'Verificando...');
-  // Note: btn-confirm doesn't exist directly, use inline button
+  // Desabilitar botão e mostrar spinner manualmente
+  const btn = $('btn-confirm');
+  const spn = $('confirm-spinner');
+  const txt = $('confirm-txt');
+  btn.disabled = true;
+  spn.style.display = 'inline-block';
+  txt.textContent = 'Verificando...';
   try{
     const res = await gasCall('confirmarEmail',{email:state.pendingEmail,code});
     if(res.ok){
@@ -825,7 +830,9 @@ async function doConfirmCode(){
   } catch(e){
     showAl('al-confirm','Erro de conexão');
   }
-  setLoading('btn-confirm','confirm-spinner','confirm-txt',false,'Confirmar');
+  btn.disabled = false;
+  spn.style.display = 'none';
+  txt.textContent = 'Confirmar';
 }
 async function reenviarCodigo(){
   const res = await gasCall('reenviarCodigo',{email:state.pendingEmail});
