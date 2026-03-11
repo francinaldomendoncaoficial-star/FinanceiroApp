@@ -1346,8 +1346,25 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
    CONFIG — ÚNICO VALOR FIXO: URL do Apps Script
    Todo o resto vem da aba "configuracoes" da planilha
 ═══════════════════════════════════════════════════════ */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyjIwSUgaGxjA7aptEn3RnG4QMoB3E4DttxGTczKIWbl-hKydCz65dRwCTup1syLrq_xw/exec';
-const AD_INTERVAL_MIN = 8; // minutos entre anúncios (fixo no código)
+// GAS_URL carregado do config.json (mesmo domínio — sem CORS)
+// Para atualizar a URL da implantação: edite apenas o config.json no GitHub
+let GAS_URL = ''; // preenchido por carregarGasUrl()
+const AD_INTERVAL_MIN = 8;
+
+async function carregarGasUrl() {
+  try {
+    // Busca config.json na raiz do GitHub Pages (mesmo origin — sem CORS)
+    const r = await fetch('./config.json?v=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json();
+    if (j.gasUrl) {
+      GAS_URL = j.gasUrl;
+      return true;
+    }
+  } catch(e) {}
+  // Fallback: URL hardcoded como segurança
+  GAS_URL = 'https://script.google.com/macros/s/AKfycbyjIwSUgaGxjA7aptEn3RnG4QMoB3E4DttxGTczKIWbl-hKydCz65dRwCTup1syLrq_xw/exec';
+  return false;
+}
 
 // Configurações dinâmicas — carregadas do servidor no boot
 // Valores abaixo são fallbacks usados antes da primeira carga
@@ -3939,41 +3956,313 @@ function togInline(id){const el=document.getElementById(id);if(el)el.style.displ
 // PDF REPORT
 // ═══════════════════════════════════
 function gerarPDF(){
-  const txM=txOfMes();
-  const rec=txM.filter(t=>t.tipo==='receita').reduce((s,t)=>s+t.valor,0);
-  const desp=txM.filter(t=>t.tipo==='despesa').reduce((s,t)=>s+t.valor,0);
-  const inv=txM.filter(t=>t.tipo==='investimento').reduce((s,t)=>s+t.valor,0);
-  const saldo=rec-desp;
-  const saldoT=bancos.reduce((s,b)=>s+saldoBanco(b.id),0);
-  const hoje=new Date().toLocaleDateString('pt-BR');
-  const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  // ── Dados do mês ──
+  const txM = txOfMes();
+  const rec  = txM.filter(t=>t.tipo==='receita').reduce((s,t)=>s+t.valor,0);
+  const desp = txM.filter(t=>t.tipo==='despesa').reduce((s,t)=>s+t.valor,0);
+  const inv  = txM.filter(t=>t.tipo==='investimento').reduce((s,t)=>s+t.valor,0);
+  const emp  = txM.filter(t=>t.tipo==='emprestimo').reduce((s,t)=>s+t.valor,0);
+  const saldo = rec - desp;
+  const saldoT = bancos.reduce((s,b)=>s+saldoBanco(b.id),0);
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const hora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const nomeUsuario = (typeof state!=='undefined' && state.user?.nome) ? state.user.nome : '';
 
-  const catMap={};txM.filter(t=>t.tipo==='despesa').forEach(t=>{const k=t.catId||'_';catMap[k]=(catMap[k]||0)+t.valor;});
+  // ── Tema do usuário (cores para o relatório) ──
+  const t = typeof temaAtual!=='undefined' ? temaAtual : {};
+  const isDark = t.modo === 'escuro';
+  // Paleta do relatório — modo claro para impressão, mas com accent do usuário
+  const acc   = t.accent  || '#22d3ee';
+  const acc2  = t.accent2 || '#818cf8';
+  const bgHdr = isDark ? 'linear-gradient(135deg,#0f172a,#1e1b4b)' : `linear-gradient(135deg,#0f172a,#1e1b4b)`; // header sempre escuro
+  const fontFamily = (t.fontBody || 'Arial').replace(/'/g,'').split(',')[0].trim();
 
-  const txRows=txM.slice().sort((a,b)=>new Date(b.data)-new Date(a.data)).map(t=>{
-    const cat=getCat(t.catId);const d=new Date(t.data+'T12:00').toLocaleDateString('pt-BR');
-    const sign=t.tipo==='receita'?'+':t.tipo==='investimento'?'−':'-';
-    const col=t.tipo==='receita'?'#059669':t.tipo==='investimento'?'#4f46e5':'#dc2626';
-    return `<tr style="border-bottom:1px solid #e2e8f0"><td style="padding:5px 4px;font-size:11px">${d}</td><td style="padding:5px 4px;font-size:11px">${t.desc}${t.parcelaInfo?' ('+t.parcelaInfo+')':''}</td><td style="padding:5px 4px;font-size:11px;color:#475569">${cat.ico||''} ${cat.nome||t.tipo}</td><td style="padding:5px 4px;font-size:12px;font-weight:700;color:${col};text-align:right">${sign}${fmt(t.valor)}</td></tr>`;
+  // ── Categorias de despesa por valor ──
+  const catMap = {};
+  txM.filter(t=>t.tipo==='despesa').forEach(t=>{
+    const k = t.catId||'_sem_cat';
+    catMap[k] = (catMap[k]||0) + t.valor;
+  });
+  const catRank = Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
+  const catBars = catRank.map(([id,val])=>{
+    const cat = getCat(id);
+    const pct = desp>0 ? Math.round(val/desp*100) : 0;
+    return `<div style="margin-bottom:7px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px">
+        <span>${cat.ico||'📌'} ${cat.nome||'Sem categoria'}</span>
+        <span style="font-weight:700">${fmt(val)} <span style="color:#94a3b8;font-weight:400">(${pct}%)</span></span>
+      </div>
+      <div style="height:5px;background:#e2e8f0;border-radius:99px">
+        <div style="height:100%;width:${pct}%;background:${acc};border-radius:99px"></div>
+      </div>
+    </div>`;
   }).join('');
 
-  const pa=prevAtivas();
-  const prevRows=pa.map(p=>{const r=realizadoPrev(p.id);const falta=Math.max(0,p.valor-r);const cat=getCat(p.catId);
-    return `<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 4px;font-size:11px">${cat.ico||''} ${p.desc}</td><td style="padding:5px 4px;font-size:11px;color:#64748b">${p.rec}</td><td style="padding:5px 4px;font-size:12px;font-weight:700;text-align:right">${fmt(p.valor)}</td><td style="padding:5px 4px;font-size:12px;font-weight:700;text-align:right;color:#059669">${fmt(r)}</td><td style="padding:5px 4px;font-size:12px;font-weight:700;text-align:right;color:${falta>0?'#dc2626':'#059669'}">${falta>0?fmt(falta):'✅'}</td></tr>`;
+  // ── Lançamentos do mês (tabela completa) ──
+  const txOrdenadas = txM.slice().sort((a,b)=>new Date(b.data)-new Date(a.data));
+  const txRows = txOrdenadas.map(t=>{
+    const cat = getCat(t.catId);
+    const d   = new Date(t.data+'T12:00').toLocaleDateString('pt-BR');
+    const sign = t.tipo==='receita'?'+':'−';
+    const col  = t.tipo==='receita'?'#059669':t.tipo==='investimento'?'#4f46e5':t.tipo==='emprestimo'?'#d97706':'#dc2626';
+    const banco = t.bancoId ? (bancos.find(b=>b.id===t.bancoId)?.nome||'') : (t.cartaoId ? (cartoes.find(c=>c.id===t.cartaoId)?.nome||'') : '');
+    return `<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:5px 4px;font-size:11px;white-space:nowrap">${d}</td>
+      <td style="padding:5px 4px;font-size:11px">${t.desc}${t.parcelaInfo?' <span style="color:#94a3b8;font-size:10px">('+t.parcelaInfo+')</span>':''}</td>
+      <td style="padding:5px 4px;font-size:11px;color:#64748b">${cat.ico||''} ${cat.nome||t.tipo}</td>
+      <td style="padding:5px 4px;font-size:11px;color:#94a3b8">${banco}</td>
+      <td style="padding:5px 4px;font-size:12px;font-weight:700;color:${col};text-align:right;white-space:nowrap">${sign}${fmt(t.valor)}</td>
+    </tr>`;
   }).join('');
 
-  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório ${mlbl()}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#f8fafc;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{body{background:#fff}.np{display:none}@page{margin:14mm 11mm}}</style></head><body>
-  <div style="max-width:700px;margin:0 auto;padding:18px">
-  <div style="background:linear-gradient(135deg,#0f172a,#1e1b4b);border-radius:12px;padding:18px;color:#fff;margin-bottom:18px">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><div style="width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#22d3ee,#818cf8);display:flex;align-items:center;justify-content:center;font-size:17px">💎</div><div><div style="font-size:17px;font-weight:800">FinanceiroApp</div><div style="font-size:10px;color:#94a3b8">Relatório ${mlbl()}</div></div><div style="margin-left:auto;font-size:10px;color:#94a3b8">${hoje} ${hora}</div></div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${[['Receitas',fmt(rec),'#34d399'],['Despesas',fmt(desp),'#f87171'],['Saldo',fmtS(saldo),saldo>=0?'#34d399':'#f87171'],['Saldo Bancos',fmtS(saldoT),saldoT>=0?'#34d399':'#f87171']].map(([l,v,c])=>`<div style="background:rgba(255,255,255,.08);border-radius:7px;padding:8px;text-align:center"><div style="font-size:9px;color:#94a3b8;margin-bottom:2px">${l}</div><div style="font-size:13px;font-weight:700;color:${c}">${v}</div></div>`).join('')}</div>
+  // ── Bancos ──
+  const bancosRows = bancos.map(b=>{
+    const saldo = saldoBanco(b.id);
+    const txB = txOfMes().filter(t=>t.bancoId===b.id||t.origBancoId===b.id||t.destBancoId===b.id);
+    const entradas = txB.filter(t=>t.tipo==='receita'&&t.bancoId===b.id).reduce((s,t)=>s+t.valor,0);
+    const saidas   = txB.filter(t=>t.tipo==='despesa'&&t.bancoId===b.id).reduce((s,t)=>s+t.valor,0);
+    return `<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:6px 4px;font-size:11px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${b.cor||acc};margin-right:5px"></span>${b.nome}
+        <span style="font-size:9px;color:#94a3b8;margin-left:3px">${b.tipo||''}</span>
+      </td>
+      <td style="padding:6px 4px;font-size:11px;color:#059669;text-align:right">+${fmt(entradas)}</td>
+      <td style="padding:6px 4px;font-size:11px;color:#dc2626;text-align:right">−${fmt(saidas)}</td>
+      <td style="padding:6px 4px;font-size:12px;font-weight:800;color:${saldo>=0?'#059669':'#dc2626'};text-align:right">${fmt(saldo)}</td>
+    </tr>`;
+  }).join('');
+
+  // ── Cartões (fatura aberta) ──
+  const cartoesRows = cartoes.map(c=>{
+    const fatura = faturaAberta(c.id);
+    const pct = c.limite>0 ? Math.min(100,Math.round(fatura/c.limite*100)) : 0;
+    const cor = pct>80?'#dc2626':pct>50?'#d97706':'#059669';
+    return `<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:6px 4px;font-size:11px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c.cor||acc2};margin-right:5px"></span>${c.nome}
+        <span style="font-size:9px;color:#94a3b8;margin-left:3px">${c.bandeira||''}</span>
+      </td>
+      <td style="padding:6px 4px;font-size:11px;text-align:right">${fmt(c.limite||0)}</td>
+      <td style="padding:6px 4px;font-size:12px;font-weight:700;color:#dc2626;text-align:right">${fmt(fatura)}</td>
+      <td style="padding:6px 4px;font-size:11px;text-align:right">
+        <span style="color:${cor};font-weight:700">${pct}%</span>
+        <div style="height:4px;background:#e2e8f0;border-radius:99px;margin-top:2px;width:60px;display:inline-block;vertical-align:middle">
+          <div style="height:100%;width:${pct}%;background:${cor};border-radius:99px"></div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // ── Benefícios (VA/VR/combustível) ──
+  const benefRows = beneficios.map(b=>{
+    const saldo = saldoBenef(b.id);
+    return `<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:6px 4px;font-size:11px">${b.nome} <span style="font-size:9px;color:#94a3b8">${b.tipo||''}</span></td>
+      <td style="padding:6px 4px;font-size:12px;font-weight:700;color:${saldo>=0?'#059669':'#dc2626'};text-align:right">${fmt(saldo)}</td>
+    </tr>`;
+  }).join('');
+
+  // ── Caixinhas ──
+  const caixRows = caixinhas.map(cx=>{
+    const saldo = saldoCaixinha(cx.id);
+    const pct = cx.meta>0 ? Math.min(100,Math.round(saldo/cx.meta*100)) : 0;
+    return `<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:6px 4px;font-size:11px">${cx.nome}${cx.meta>0?` <span style="font-size:9px;color:#94a3b8">meta: ${fmt(cx.meta)}</span>`:''}</td>
+      <td style="padding:6px 4px;font-size:12px;font-weight:700;color:#4f46e5;text-align:right">${fmt(saldo)}</td>
+      <td style="padding:6px 4px;font-size:11px;text-align:right">
+        ${cx.meta>0?`<span style="color:${pct>=100?'#059669':'#d97706'};font-weight:700">${pct}%</span>`:'—'}
+      </td>
+    </tr>`;
+  }).join('');
+
+  // ── Investimentos do mês ──
+  const invTxs = txM.filter(t=>t.tipo==='investimento');
+  const invRows = invTxs.map(t=>{
+    const d = new Date(t.data+'T12:00').toLocaleDateString('pt-BR');
+    return `<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:5px 4px;font-size:11px">${d}</td>
+      <td style="padding:5px 4px;font-size:11px">${t.desc}</td>
+      <td style="padding:5px 4px;font-size:11px;color:#64748b">${t.corretora||t.subtipo||'—'}</td>
+      <td style="padding:5px 4px;font-size:12px;font-weight:700;color:#4f46e5;text-align:right">${fmt(t.valor)}</td>
+    </tr>`;
+  }).join('');
+
+  // ── Previsões vs Realizado ──
+  const pa = prevAtivas();
+  const prevRows = pa.map(p=>{
+    const r = realizadoPrev(p.id);
+    const falta = Math.max(0,p.valor-r);
+    const cat = getCat(p.catId);
+    return `<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:5px 4px;font-size:11px">${cat.ico||''} ${p.desc}</td>
+      <td style="padding:5px 4px;font-size:10px;color:#64748b">${p.rec}</td>
+      <td style="padding:5px 4px;font-size:11px;text-align:right">${fmt(p.valor)}</td>
+      <td style="padding:5px 4px;font-size:11px;font-weight:700;text-align:right;color:#059669">${fmt(r)}</td>
+      <td style="padding:5px 4px;font-size:11px;font-weight:700;text-align:right;color:${falta>0?'#dc2626':'#059669'}">${falta>0?fmt(falta):'✅'}</td>
+    </tr>`;
+  }).join('');
+
+  // ── Helper: seção do relatório ──
+  const secao = (icon,titulo,conteudo) => `
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;break-inside:avoid">
+      <div style="font-size:13px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:6px;border-bottom:2px solid ${acc};padding-bottom:7px">
+        ${icon} ${titulo}
+      </div>
+      ${conteudo}
+    </div>`;
+
+  const tabela = (ths, rows) => `
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:#f8fafc">${ths.map(([t,r])=>`<th style="padding:5px 4px;text-align:${r||'left'};font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.5px">${t}</th>`).join('')}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório ${mlbl()} — ${appConfig.appNome||'FinanceiroApp'}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'${fontFamily}',Arial,sans-serif;background:#f8fafc;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:13px}
+    @media print{
+      body{background:#fff}
+      .np{display:none}
+      @page{margin:12mm 10mm;size:A4}
+      tr{page-break-inside:avoid}
+      .section{break-inside:avoid}
+    }
+    @media screen{
+      body{padding:20px}
+    }
+  </style>
+</head>
+<body>
+<div style="max-width:740px;margin:0 auto">
+
+  <!-- CABEÇALHO -->
+  <div style="background:${bgHdr};border-radius:12px;padding:20px;color:#fff;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:40px;height:40px;border-radius:9px;background:linear-gradient(135deg,${acc},${acc2});display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💎</div>
+      <div style="flex:1">
+        <div style="font-size:18px;font-weight:800">${appConfig.appNome||'FinanceiroApp'}</div>
+        <div style="font-size:11px;color:#94a3b8">Relatório Financeiro — ${mlbl()}</div>
+        ${nomeUsuario?`<div style="font-size:10px;color:#64748b;margin-top:1px">${nomeUsuario}</div>`:''}
+      </div>
+      <div style="text-align:right;font-size:10px;color:#64748b">
+        <div>Gerado em</div>
+        <div style="font-weight:700;color:#94a3b8">${hoje} ${hora}</div>
+      </div>
+    </div>
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      ${[
+        ['Receitas',   fmt(rec),    '#34d399'],
+        ['Despesas',   fmt(desp),   '#f87171'],
+        ['Investido',  fmt(inv),    '#818cf8'],
+        ['Saldo Mês',  fmtS(saldo), saldo>=0?'#34d399':'#f87171'],
+      ].map(([l,v,c])=>`
+        <div style="background:rgba(255,255,255,.09);border-radius:8px;padding:9px 8px;text-align:center">
+          <div style="font-size:9px;color:#94a3b8;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">${l}</div>
+          <div style="font-size:14px;font-weight:800;color:${c}">${v}</div>
+        </div>`).join('')}
+    </div>
+    <!-- Saldo total dos bancos -->
+    <div style="margin-top:10px;background:rgba(255,255,255,.06);border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11px;color:#94a3b8">Saldo total em bancos</span>
+      <span style="font-size:15px;font-weight:800;color:${saldoT>=0?'#34d399':'#f87171'}">${fmt(saldoT)}</span>
+    </div>
   </div>
-  ${bancos.length?`<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:13px;margin-bottom:14px"><div style="font-weight:700;margin-bottom:8px">🏦 Saldos</div>${bancos.map(b=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f1f5f9;font-size:11px"><span>${b.nome}</span><b style="color:${saldoBanco(b.id)>=0?'#059669':'#dc2626'}">${fmt(saldoBanco(b.id))}</b></div>`).join('')}</div>`:''}
-  ${pa.length?`<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:13px;margin-bottom:14px"><div style="font-weight:700;margin-bottom:8px">🎯 Previsto vs Realizado</div><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f8fafc"><th style="padding:5px 4px;text-align:left;font-size:9px;color:#64748b">ITEM</th><th style="padding:5px 4px;font-size:9px;color:#64748b">REC.</th><th style="padding:5px 4px;text-align:right;font-size:9px;color:#64748b">PREV.</th><th style="padding:5px 4px;text-align:right;font-size:9px;color:#64748b">REAL.</th><th style="padding:5px 4px;text-align:right;font-size:9px;color:#64748b">FALTA</th></tr></thead><tbody>${prevRows}</tbody></table></div>`:''}
-  ${txRows?`<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:13px;margin-bottom:14px"><div style="font-weight:700;margin-bottom:8px">📋 Lançamentos do Mês</div><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f8fafc"><th style="padding:5px 4px;text-align:left;font-size:9px;color:#64748b">DATA</th><th style="padding:5px 4px;text-align:left;font-size:9px;color:#64748b">DESCRIÇÃO</th><th style="padding:5px 4px;text-align:left;font-size:9px;color:#64748b">CATEGORIA</th><th style="padding:5px 4px;text-align:right;font-size:9px;color:#64748b">VALOR</th></tr></thead><tbody>${txRows}</tbody></table></div>`:''}
-  <div style="text-align:center;font-size:10px;color:#94a3b8;padding:10px 0">FinanceiroApp · Gerado em ${hoje} às ${hora}</div>
-  <div class="np" style="position:fixed;bottom:18px;right:18px"><button onclick="window.print()" style="background:linear-gradient(135deg,#22d3ee,#818cf8);color:#03161c;border:none;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">🖨️ Salvar PDF</button></div>
+
+  <!-- BANCOS -->
+  ${bancos.length ? secao('🏦','Bancos — Saldos e Movimentação do Mês',
+    tabela(
+      [['Banco','left'],['Entradas','right'],['Saídas','right'],['Saldo atual','right']],
+      bancosRows
+    )
+  ) : ''}
+
+  <!-- CARTÕES -->
+  ${cartoes.length ? secao('💳','Cartões de Crédito — Fatura Aberta',
+    tabela(
+      [['Cartão','left'],['Limite','right'],['Fatura aberta','right'],['Uso','right']],
+      cartoesRows
+    )
+  ) : ''}
+
+  <!-- BENEFÍCIOS -->
+  ${beneficios.length ? secao('🎁','Benefícios (VA / VR / Combustível)',
+    tabela(
+      [['Benefício','left'],['Saldo disponível','right']],
+      benefRows
+    )
+  ) : ''}
+
+  <!-- CAIXINHAS -->
+  ${caixinhas.length ? secao('🎯','Caixinhas de Poupança',
+    tabela(
+      [['Caixinha','left'],['Acumulado','right'],['Meta','right']],
+      caixRows
+    )
+  ) : ''}
+
+  <!-- INVESTIMENTOS DO MÊS -->
+  ${invTxs.length ? secao('📈','Investimentos — ' + mlbl(),
+    `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:7px 10px;background:#f8f0ff;border-radius:7px">
+       <span style="font-size:11px;color:#4f46e5;font-weight:600">Total investido no mês</span>
+       <span style="font-size:15px;font-weight:800;color:#4f46e5">${fmt(inv)}</span>
+     </div>` +
+    tabela(
+      [['Data','left'],['Descrição','left'],['Corretora/Tipo','left'],['Valor','right']],
+      invRows
+    )
+  ) : ''}
+
+  <!-- DESPESAS POR CATEGORIA -->
+  ${catRank.length ? secao('📊','Despesas por Categoria',
+    `<div style="margin-bottom:8px;display:flex;justify-content:space-between;font-size:11px;color:#64748b">
+       <span>Total: ${fmt(desp)}</span>
+       <span>${catRank.length} categorias</span>
+     </div>` + catBars
+  ) : ''}
+
+  <!-- PREVISÕES VS REALIZADO -->
+  ${pa.length ? secao('🔄','Previsões vs Realizado',
+    tabela(
+      [['Item','left'],['Recorrência','left'],['Previsto','right'],['Realizado','right'],['Falta','right']],
+      prevRows
+    )
+  ) : ''}
+
+  <!-- TODOS OS LANÇAMENTOS -->
+  ${txRows ? secao('📋',`Lançamentos de ${mlbl()} (${txOrdenadas.length})`,
+    tabela(
+      [['Data','left'],['Descrição','left'],['Categoria','left'],['Conta','left'],['Valor','right']],
+      txRows
+    )
+  ) : '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px;text-align:center;color:#94a3b8;margin-bottom:14px">Nenhum lançamento em ' + mlbl() + '</div>'}
+
+  <!-- RODAPÉ -->
+  <div style="text-align:center;font-size:10px;color:#94a3b8;padding:12px 0;border-top:1px solid #e2e8f0;margin-top:4px">
+    ${appConfig.appNome||'FinanceiroApp'} · Relatório gerado em ${hoje} às ${hora}
   </div>
+
+</div>
+
+<!-- BOTÃO IMPRIMIR (não aparece na impressão) -->
+<div class="np" style="position:fixed;bottom:20px;right:20px;display:flex;gap:8px">
+  <button onclick="window.print()" style="background:linear-gradient(135deg,${acc},${acc2});color:#03161c;border:none;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.2)">🖨️ Salvar / Imprimir PDF</button>
+  <button onclick="window.close()" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:12px 16px;border-radius:10px;font-size:13px;cursor:pointer">✕</button>
+</div>
+
+</body></html>`;
+
+  const win = window.open('','_blank');
+  if(!win){ showToast('Permita pop-ups para gerar o relatório','er'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
 <!-- ═══════════════════════ POPUP: PAGAMENTO CONFIRMADO ═══════════════════════ -->
 <div id="pag-confirm-popup" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--s1);border:1px solid rgba(52,211,153,.3);border-radius:16px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)">
@@ -4496,23 +4785,6 @@ window.addEventListener('resize', ()=>{
 })();
 
 </script>
-
-<!-- ═══════════════════════ POPUP: PAGAMENTO CONFIRMADO ═══════════════════════ -->
-<div id="pag-confirm-popup" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px">
-  <div style="background:var(--s1);border:1px solid rgba(52,211,153,.3);border-radius:16px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)">
-    <div style="font-size:52px;margin-bottom:12px">🎉</div>
-    <div style="font-family:'Instrument Serif',serif;font-size:22px;font-weight:700;color:var(--g);margin-bottom:8px">Acesso liberado!</div>
-    <p style="font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:20px">
-      Seu acesso vitalício foi ativado.<br>
-      Obrigado por assinar o <strong style="color:var(--text)">FinanceiroApp</strong>! 💎<br><br>
-      <span style="font-size:11px;color:var(--t3)">Caso identifiquemos alguma pendência no pagamento, entraremos em contato pelo seu e-mail.</span>
-    </p>
-    <button class="btn btn-p" style="width:100%;font-size:14px" onclick="document.getElementById('pag-confirm-popup').style.display='none';goPage('dash')">
-      🚀 Começar a usar
-    </button>
-  </div>
-</div>
-
 
 <!-- ═══════════════════════ MODAL: TEMA ═══════════════════════ -->
 <div class="ov" id="ov-tema">
