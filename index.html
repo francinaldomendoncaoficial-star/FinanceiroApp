@@ -1315,7 +1315,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
       <p style="font-weight:700;color:var(--text);margin-bottom:6px">1. Aceitação dos Termos</p>
       <p style="margin-bottom:10px">Ao criar uma conta no FinanceiroApp, você concorda com estes Termos de Uso.</p>
       <p style="font-weight:700;color:var(--text);margin-bottom:6px">2. Período de Teste</p>
-      <p style="margin-bottom:10px">Novos usuários recebem 7 dias de acesso gratuito. Após o vencimento, o cadastro de novos lançamentos fica suspenso até a assinatura.</p>
+      <p style="margin-bottom:10px">Novos usuários recebem ${appConfig.trialDays} dias de acesso gratuito. Após o vencimento, o cadastro de novos lançamentos fica suspenso até a assinatura.</p>
       <p style="font-weight:700;color:var(--text);margin-bottom:6px">3. Dados do Usuário</p>
       <p style="margin-bottom:10px">Seus dados ficam em uma planilha Google Sheets. O FinanceiroApp não compartilha seus dados com terceiros.</p>
       <p style="font-weight:700;color:var(--text);margin-bottom:6px">4. Pagamento</p>
@@ -1343,14 +1343,35 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
    ① SAAS LAYER — Config, Auth, Session, Trial, Assinar
 ═══════════════════════════════════════════════════════ */
 /* ═══════════════════════════════════════════════════════
-   CONFIG — ALTERE AQUI
+   CONFIG — ÚNICO VALOR FIXO: URL do Apps Script
+   Todo o resto vem da aba "configuracoes" da planilha
 ═══════════════════════════════════════════════════════ */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyjIwSUgaGxjA7aptEn3RnG4QMoB3E4DttxGTczKIWbl-hKydCz65dRwCTup1syLrq_xw/exec'; // Substitua pelo URL do seu Apps Script
-const APP_NAME = 'FinanceiroApp';
-const TRIAL_DAYS = 7;
-const PIX_KEY = 'financeiro@seudominio.com.br'; // Substitua pela sua chave PIX
-const PIX_VALOR = 'R$ 97,00'; // Valor único vitalício
-const AD_INTERVAL_MIN = 8; // minutos entre popups de propaganda (para usuários trial)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyjIwSUgaGxjA7aptEn3RnG4QMoB3E4DttxGTczKIWbl-hKydCz65dRwCTup1syLrq_xw/exec';
+const AD_INTERVAL_MIN = 8; // minutos entre anúncios (fixo no código)
+
+// Configurações dinâmicas — carregadas do servidor no boot
+// Valores abaixo são fallbacks usados antes da primeira carga
+let appConfig = {
+  pixKey:     'financeiro@seudominio.com.br',
+  pixValor:   '97,00',
+  pixNome:    'FinanceiroApp',
+  pixCidade:  'Sua Cidade',
+  trialDays:  7,
+  appNome:    'FinanceiroApp',
+  appAtivo:   'sim',
+  msgBloqueio: '',
+};
+
+async function carregarAppConfig() {
+  try {
+    const res = await gasCall('getConfig', {});
+    if (res.ok && res.config) {
+      appConfig = { ...appConfig, ...res.config };
+      // Atualiza o título da página
+      if (appConfig.appNome) document.title = appConfig.appNome + ' — Controle Financeiro';
+    }
+  } catch(e) { /* usa fallback */ }
+}
 
 /* ═══════════════════════════════════════════════════════
    STATE
@@ -1837,8 +1858,8 @@ function buildAssinarPage(){
         <div class="slabel">Pagar via PIX</div>
         <div class="pix-box">
           <div style="font-size:11px;color:var(--t2);margin-bottom:6px">Chave PIX (e-mail):</div>
-          <div class="pix-key" id="pix-key-val">${PIX_KEY}</div>
-          <div style="font-size:12px;color:var(--text);font-weight:700;margin-bottom:8px">Valor: ${PIX_VALOR}</div>
+          <div class="pix-key" id="pix-key-val">${appConfig.pixKey}</div>
+          <div style="font-size:12px;color:var(--text);font-weight:700;margin-bottom:8px">Valor: R$ ${appConfig.pixValor}</div>
           <button class="btn btn-pix" onclick="copiarPix()">📋 Copiar Chave PIX</button>
           <div class="pix-status">Após o pagamento, clique em "Já paguei" abaixo</div>
         </div>
@@ -1863,12 +1884,12 @@ function buildAssinarPage(){
 
 async function copiarPix(){
   try{
-    await navigator.clipboard.writeText(PIX_KEY);
+    await navigator.clipboard.writeText(appConfig.pixKey);
     showToast('Chave PIX copiada!');
     // Registrar que copiou e colocar em avaliação
     await gasCall('pixCopiado',{email:state.user.email});
   } catch(e){
-    showToast('Copie manualmente: '+PIX_KEY,'inf');
+    showToast('Copie manualmente: '+appConfig.pixKey,'inf');
   }
 }
 async function jaPaguei(){
@@ -1927,7 +1948,7 @@ function buildConfigPage(){
       <div class="cfg-arr">→</div>
     </div>
     <div style="text-align:center;margin-top:20px;font-size:10px;color:var(--t3)">
-      ${APP_NAME} v2.0 — Todos os direitos reservados
+      ${appConfig.appNome} v2.0 — Todos os direitos reservados
     </div>
   `;
 }
