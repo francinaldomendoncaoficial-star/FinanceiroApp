@@ -11,6 +11,7 @@
 <style>
 
 :root{
+  /* ── Tema dinâmico (sobrescrito pelo JS via applyTema) ── */
   --bg:#050a12;--s1:#0b1522;--s2:#0f1d30;--s3:#162540;
   --bd:#1d3050;--bd2:#243a5e;
   --acc:#22d3ee;--acc2:#818cf8;--g:#34d399;
@@ -18,9 +19,11 @@
   --text:#e8f0fe;--t2:#7a96b8;--t3:#3d5470;
   --inc:#34d399;--exp:#f87171;--inv:#818cf8;--loa:#fbbf24;--trf:#22d3ee;
   --r:14px;--r2:10px;--r3:7px;
+  --font-body:'Plus Jakarta Sans',sans-serif;
+  --font-size:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:var(--font-size);overflow-x:hidden}
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
 
@@ -228,7 +231,29 @@ select option{background:var(--s1)}
 .pi-prev{font-size:12px;font-weight:600}
 .pi-real{font-size:10px;color:var(--t2);margin-top:1px}
 
-/* ── SaaS extra styles ── */
+/* ── TEMA ── */
+.tema-modo-btn{background:var(--s1);border:2px solid var(--bd);border-radius:var(--r);padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s}
+.tema-modo-btn.on{border-color:var(--acc);background:rgba(34,211,238,.08)}
+.tema-cores{display:flex;flex-wrap:wrap;gap:10px}
+.tema-cor{width:36px;height:36px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .18s;flex-shrink:0}
+.tema-cor.on{border-color:#fff;transform:scale(1.18);box-shadow:0 0 10px rgba(255,255,255,.3)}
+.tema-fonte-btn{background:var(--s1);border:2px solid var(--bd);border-radius:var(--r2);padding:11px 13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .2s}
+.tema-fonte-btn.on{border-color:var(--acc);background:rgba(34,211,238,.07)}
+.tema-size-btn{flex:1;background:var(--s1);border:2px solid var(--bd);border-radius:var(--r2);padding:10px 6px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .2s}
+.tema-size-btn.on{border-color:var(--acc);background:rgba(34,211,238,.07)}
+.tema-radius-btn{flex:1;background:var(--s1);border:2px solid var(--bd);border-radius:var(--r2);padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s}
+.tema-radius-btn.on{border-color:var(--acc);background:rgba(34,211,238,.07)}
+
+/* ── TEMA CLARO ── */
+body.tema-claro{--bg:#f0f4f8;--s1:#ffffff;--s2:#f8fafc;--s3:#e8f0fe;--bd:#d1dde8;--bd2:#b8ccd8;--text:#0f2036;--t2:#4a6080;--t3:#8aabcc;background:var(--bg);color:var(--text)}
+body.tema-claro .hdr{background:linear-gradient(180deg,#e2eaf4,var(--bg))}
+body.tema-claro input,body.tema-claro select,body.tema-claro textarea{background:var(--s1);color:var(--text)}
+body.tema-claro .nav-bar{background:rgba(240,244,248,.97)}
+body.tema-claro .ad-popup{background:rgba(0,0,0,.5)}
+body.tema-claro .ad-box{background:#fff;color:#0f2036}
+body.tema-claro .auth-box{background:#fff}
+
+/* ── SaaS extra styles ── *//* ── SaaS extra styles ── */
 
 /* ═══════════════════════════════════════════════
    TOKENS & RESET
@@ -242,7 +267,7 @@ select option{background:var(--s1)}
   --r:14px;--r2:10px;--r3:7px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:var(--font-size);overflow-x:hidden}
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
 
@@ -671,6 +696,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus J
     <div class="hdr-t">
       <div class="hdr-name">Financeiro<span style="color:var(--acc)">App</span></div>
       <div class="hdr-date" id="hdr-date"></div>
+      <div style="font-size:10px;color:var(--t2);margin-top:1px" id="hdr-user"></div>
     </div>
     <div class="hdr-btns">
       <button class="hbtn warn" id="btn-trial-hdr" onclick="goPage('assinar')" style="display:none">⏱ Trial</button>
@@ -1318,6 +1344,8 @@ function enterApp(){
   $('app-screen').style.display = 'block';
   // Sync user data from Sheets to localStorage cache
   syncUserDataFromSheets();
+  // Carregar tema do usuário
+  carregarTema();
   updateHdr();
   buildAssinarPage();
   buildConfigPage();
@@ -1332,7 +1360,8 @@ function enterApp(){
 function updateHdr(){
   const u = state.user;
   if(!u) return;
-  $('hdr-user').textContent = u.nome || u.email;
+  const hdrUser = $('hdr-user');
+  if(hdrUser) hdrUser.textContent = u.nome || u.email;
   const trialBtn = $('btn-trial-hdr');
   if(u.assinatura === 'vitalicio'){
     trialBtn.style.display = 'none';
@@ -1615,6 +1644,11 @@ function buildConfigPage(){
         </div>
       </div>
     </div>
+    <div class="cfg-item" onclick="abrirModalTema()">
+      <div class="cfg-icon">🎨</div>
+      <div class="cfg-info"><div class="cfg-t">Personalizar Tema</div><div class="cfg-s">Cores, fonte, modo claro/escuro</div></div>
+      <div style="color:var(--t3);font-size:18px">›</div>
+    </div>
     ${u.planilhaId ? `<div class="cfg-item" onclick="abrirPlanilha()">
       <div class="cfg-icon">📊</div>
       <div class="cfg-info"><div class="cfg-t">Minha Planilha</div><div class="cfg-s">Abrir no Google Sheets</div></div>
@@ -1731,15 +1765,18 @@ function openPrivacidade(e){
    AD POPUP
 ═══════════════════════════════════════════════════════ */
 function startAdTimer(){
-  if(state.user?.assinatura === 'vitalicio') return;
   clearInterval(state.adTimer);
-  state.adTimer = setInterval(()=>{
-    if(!isBlocked()) showAd(); // mostra apenas para usuários trial
-  }, AD_INTERVAL_MIN * 60 * 1000);
-  // Mostrar depois de 3 min na primeira vez
+  // Anúncio só para usuário trial ativo (não vitalicio, não bloqueado)
+  if(state.user?.assinatura === 'vitalicio') return;
+  if(getDaysLeft() <= 0) return; // trial expirado — não mostra anúncio, mostra banner de bloqueio
+  // Mostrar primeira vez depois de 3 min
   setTimeout(()=>{
-    if(state.user && state.user.assinatura !== 'vitalicio') showAd();
+    if(state.user?.assinatura !== 'vitalicio' && getDaysLeft() > 0) showAd();
   }, 3 * 60 * 1000);
+  // Repetir a cada AD_INTERVAL_MIN
+  state.adTimer = setInterval(()=>{
+    if(state.user?.assinatura !== 'vitalicio' && getDaysLeft() > 0) showAd();
+  }, AD_INTERVAL_MIN * 60 * 1000);
 }
 function showAd(){ $('ad-popup').classList.add('on'); }
 function closeAd(){ $('ad-popup').classList.remove('on'); }
@@ -3481,10 +3518,30 @@ function renderMais(){
   const totalTxs=txs.length;
   const totalPrev=previsoes.length;
   const ultimoBackup=DB.get('fa_last_backup','Nunca');
+  const isVit = typeof state!=='undefined' && state.user?.assinatura==='vitalicio';
+  const daysLeft = typeof getDaysLeft==='function' ? getDaysLeft() : 0;
   el.innerHTML=`<div class="ptitle">Mais</div>
+
+  ${!isVit ? `<div class="card" style="background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(129,140,248,.08));border-color:rgba(129,140,248,.25);margin-bottom:12px" onclick="goPage('assinar')">
+    <div style="padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer">
+      <div style="font-size:28px">⭐</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:14px">Plano Vitalício</div>
+        <div style="font-size:11px;color:var(--t2);margin-top:2px">${daysLeft>0?`Trial: ${daysLeft} dia(s) restante(s)`:'⛔ Trial expirado — assine para continuar'}</div>
+      </div>
+      <div style="color:var(--acc);font-size:20px">›</div>
+    </div>
+  </div>` : `<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:var(--r2);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+    <span style="font-size:20px">🎉</span>
+    <div style="font-size:12px;font-weight:700;color:var(--g)">Você é assinante vitalício!</div>
+  </div>`}
+
   <div class="dg" style="margin-bottom:12px">
     <button class="btn btn-p" style="font-size:12px" onclick="goPage('orcamento')">🎯 Orçamento</button>
     <button class="btn btn-g" style="font-size:12px" onclick="gerarPDF()">📄 Relatório PDF</button>
+  </div>
+  <div style="margin-bottom:12px">
+    <button class="btn" style="background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.25);color:var(--acc2);font-size:12px" onclick="abrirModalTema()">🎨 Personalizar Tema</button>
   </div>
 
   <!-- BACKUP -->
@@ -3602,6 +3659,125 @@ function gerarPDF(){
   </div>
 </div>
 
+
+<!-- ═══════════════════════ MODAL: TEMA ═══════════════════════ -->
+<div class="ov" id="ov-tema">
+  <div class="modal" style="max-height:92vh;overflow-y:auto">
+    <div class="mt">🎨 <span>Personalizar Tema</span><button class="mc" onclick="closeOv('ov-tema')">✕</button></div>
+
+    <!-- MODO CLARO/ESCURO -->
+    <div class="slabel">Modo</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div id="modo-escuro" class="tema-modo-btn on" onclick="setModo('escuro')">
+        <div style="font-size:20px;margin-bottom:4px">🌙</div>
+        <div style="font-size:12px;font-weight:700">Escuro</div>
+        <div style="font-size:10px;color:var(--t2)">Noturno</div>
+      </div>
+      <div id="modo-claro" class="tema-modo-btn" onclick="setModo('claro')">
+        <div style="font-size:20px;margin-bottom:4px">☀️</div>
+        <div style="font-size:12px;font-weight:700">Claro</div>
+        <div style="font-size:10px;color:var(--t2)">Diurno</div>
+      </div>
+    </div>
+
+    <!-- COR DE DESTAQUE (ACCENT) -->
+    <div class="slabel">Cor Principal</div>
+    <div class="tema-cores" id="tema-accents" style="margin-bottom:14px">
+      <div class="tema-cor" data-col="#22d3ee" style="background:#22d3ee" onclick="setAccent('#22d3ee','#818cf8')" title="Ciano"></div>
+      <div class="tema-cor" data-col="#818cf8" style="background:#818cf8" onclick="setAccent('#818cf8','#22d3ee')" title="Índigo"></div>
+      <div class="tema-cor" data-col="#34d399" style="background:#34d399" onclick="setAccent('#34d399','#059669')" title="Verde"></div>
+      <div class="tema-cor" data-col="#f472b6" style="background:#f472b6" onclick="setAccent('#f472b6','#a78bfa')" title="Rosa"></div>
+      <div class="tema-cor" data-col="#fb923c" style="background:#fb923c" onclick="setAccent('#fb923c','#fbbf24')" title="Laranja"></div>
+      <div class="tema-cor" data-col="#a78bfa" style="background:#a78bfa" onclick="setAccent('#a78bfa','#f472b6')" title="Lilás"></div>
+      <div class="tema-cor" data-col="#fbbf24" style="background:#fbbf24" onclick="setAccent('#fbbf24','#f97316')" title="Amarelo"></div>
+      <div class="tema-cor" data-col="#60a5fa" style="background:#60a5fa" onclick="setAccent('#60a5fa','#818cf8')" title="Azul"></div>
+    </div>
+
+    <!-- FONTE -->
+    <div class="slabel">Fonte</div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px" id="tema-fontes">
+      <div class="tema-fonte-btn on" data-font="'Plus Jakarta Sans', sans-serif" onclick="setFonte(this)">
+        <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700">Plus Jakarta Sans</span>
+        <span style="font-size:10px;color:var(--t2)">Padrão</span>
+      </div>
+      <div class="tema-fonte-btn" data-font="'Inter', sans-serif" onclick="setFonte(this)">
+        <span style="font-family:'Inter',sans-serif;font-weight:700">Inter</span>
+        <span style="font-size:10px;color:var(--t2)">Moderna</span>
+      </div>
+      <div class="tema-fonte-btn" data-font="'Roboto', sans-serif" onclick="setFonte(this)">
+        <span style="font-family:'Roboto',sans-serif;font-weight:700">Roboto</span>
+        <span style="font-size:10px;color:var(--t2)">Google</span>
+      </div>
+      <div class="tema-fonte-btn" data-font="'DM Sans', sans-serif" onclick="setFonte(this)">
+        <span style="font-family:'DM Sans',sans-serif;font-weight:700">DM Sans</span>
+        <span style="font-size:10px;color:var(--t2)">Arredondada</span>
+      </div>
+      <div class="tema-fonte-btn" data-font="system-ui, sans-serif" onclick="setFonte(this)">
+        <span style="font-weight:700">Sistema</span>
+        <span style="font-size:10px;color:var(--t2)">Fonte do celular</span>
+      </div>
+    </div>
+
+    <!-- TAMANHO DA FONTE -->
+    <div class="slabel">Tamanho da Fonte</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px" id="tema-sizes">
+      <div class="tema-size-btn" data-sz="12" onclick="setFontSize(12)">
+        <span style="font-size:11px">Aa</span><span style="font-size:9px;color:var(--t2)">Pequena</span>
+      </div>
+      <div class="tema-size-btn on" data-sz="14" onclick="setFontSize(14)">
+        <span style="font-size:14px">Aa</span><span style="font-size:9px;color:var(--t2)">Normal</span>
+      </div>
+      <div class="tema-size-btn" data-sz="16" onclick="setFontSize(16)">
+        <span style="font-size:16px">Aa</span><span style="font-size:9px;color:var(--t2)">Grande</span>
+      </div>
+      <div class="tema-size-btn" data-sz="18" onclick="setFontSize(18)">
+        <span style="font-size:18px">Aa</span><span style="font-size:9px;color:var(--t2)">XL</span>
+      </div>
+    </div>
+
+    <!-- BORDAS -->
+    <div class="slabel">Arredondamento</div>
+    <div style="display:flex;gap:8px;margin-bottom:18px" id="tema-radius">
+      <div class="tema-radius-btn" data-r="4" onclick="setRadius(4)">
+        <div style="width:26px;height:26px;background:var(--acc);border-radius:4px;margin:0 auto 4px"></div>
+        <span style="font-size:9px;color:var(--t2)">Quadrado</span>
+      </div>
+      <div class="tema-radius-btn on" data-r="14" onclick="setRadius(14)">
+        <div style="width:26px;height:26px;background:var(--acc);border-radius:14px;margin:0 auto 4px"></div>
+        <span style="font-size:9px;color:var(--t2)">Normal</span>
+      </div>
+      <div class="tema-radius-btn" data-r="20" onclick="setRadius(20)">
+        <div style="width:26px;height:26px;background:var(--acc);border-radius:20px;margin:0 auto 4px"></div>
+        <span style="font-size:9px;color:var(--t2)">Arredondado</span>
+      </div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="slabel">Preview</div>
+    <div id="tema-preview" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:16px">
+      <div style="font-family:var(--font-body);font-size:var(--font-size)">
+        <div style="font-weight:800;color:var(--acc);margin-bottom:6px">FinanceiroApp</div>
+        <div style="font-size:calc(var(--font-size) - 2px);color:var(--t2);margin-bottom:8px">Mês atual · Saldo</div>
+        <div style="display:flex;gap:7px">
+          <span style="background:rgba(52,211,153,.15);color:var(--g);border-radius:var(--r3);padding:4px 9px;font-size:calc(var(--font-size) - 3px);font-weight:700">+ R$ 5.000</span>
+          <span style="background:rgba(248,113,113,.15);color:var(--red);border-radius:var(--r3);padding:4px 9px;font-size:calc(var(--font-size) - 3px);font-weight:700">- R$ 2.300</span>
+        </div>
+        <div style="margin-top:10px;height:6px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:60%;background:var(--acc);border-radius:99px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-g" onclick="resetTema()">↺ Padrão</button>
+      <button class="btn btn-p" onclick="salvarTema()">
+        <span id="tema-save-spinner" style="display:none" class="spinner"></span>
+        <span id="tema-save-txt">💾 Salvar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 </body></html>`;
   const blob=new Blob([html],{type:'text/html;charset=utf-8'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),60000);toast('📄 Relatório gerado!','inf');
 }
@@ -3684,6 +3860,174 @@ function closeAd(){ $('ad-popup').classList.remove('on'); }
 function closeAdAndGoAssinar(){ closeAd(); goPage('assinar'); }
 
 
+
+/* ═══════════════════════════════════════════════════════
+   SISTEMA DE TEMAS
+═══════════════════════════════════════════════════════ */
+
+const TEMAS_ESCURO = {
+  '--bg':'#050a12','--s1':'#0b1522','--s2':'#0f1d30','--s3':'#162540',
+  '--bd':'#1d3050','--bd2':'#243a5e',
+  '--text':'#e8f0fe','--t2':'#7a96b8','--t3':'#3d5470',
+};
+const TEMAS_CLARO = {
+  '--bg':'#f0f4f8','--s1':'#ffffff','--s2':'#f8fafc','--s3':'#e8f0fe',
+  '--bd':'#d1dde8','--bd2':'#b8ccd8',
+  '--text':'#0f2036','--t2':'#4a6080','--t3':'#8aabcc',
+};
+
+// Tema em memória (antes de salvar)
+let temaAtual = {
+  modo: 'escuro',
+  accent: '#22d3ee',
+  accent2: '#818cf8',
+  fontBody: "'Plus Jakarta Sans', sans-serif",
+  fontSize: 14,
+  radius: 14,
+};
+
+function applyTema(t){
+  const r = document.documentElement.style;
+  const vars = t.modo === 'claro' ? TEMAS_CLARO : TEMAS_ESCURO;
+  // modo
+  document.body.classList.toggle('tema-claro', t.modo === 'claro');
+  // cores de fundo / texto
+  Object.entries(vars).forEach(([k,v]) => r.setProperty(k,v));
+  // accent
+  r.setProperty('--acc', t.accent || '#22d3ee');
+  r.setProperty('--acc2', t.accent2 || '#818cf8');
+  // fonte
+  r.setProperty('--font-body', t.fontBody || "'Plus Jakarta Sans',sans-serif");
+  r.setProperty('--font-size', (t.fontSize||14)+'px');
+  // bordas
+  const rad = t.radius || 14;
+  r.setProperty('--r',  rad+'px');
+  r.setProperty('--r2', Math.max(4, rad-4)+'px');
+  r.setProperty('--r3', Math.max(3, rad-7)+'px');
+  // theme-color meta
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.content = t.modo==='claro' ? '#f0f4f8' : '#050a12';
+  // guardar fonte extra no Google Fonts se necessário
+  loadExtraFont(t.fontBody);
+}
+
+function loadExtraFont(font){
+  const map = {
+    "'Inter', sans-serif":          'Inter:wght@400;500;600;700;800',
+    "'Roboto', sans-serif":         'Roboto:wght@400;500;700',
+    "'DM Sans', sans-serif":        'DM+Sans:wght@400;500;600;700;800',
+  };
+  const gfont = map[font];
+  if(!gfont) return;
+  const id = 'gfont-extra';
+  if(document.getElementById(id)) return;
+  const lnk = document.createElement('link');
+  lnk.id = id; lnk.rel = 'stylesheet';
+  lnk.href = `https://fonts.googleapis.com/css2?family=${gfont}&display=swap`;
+  document.head.appendChild(lnk);
+}
+
+async function carregarTema(){
+  // Primeiro aplica do localStorage para ser instantâneo
+  const local = localStorage.getItem('fa_tema');
+  if(local){ try{ temaAtual = JSON.parse(local); applyTema(temaAtual); }catch(e){} }
+  // Depois sincroniza do Sheets
+  if(!state.user?.planilhaId) return;
+  try{
+    const res = await gasCall('getTema',{email:state.user.email, planilhaId:state.user.planilhaId});
+    if(res.ok && res.tema){
+      temaAtual = res.tema;
+      localStorage.setItem('fa_tema', JSON.stringify(temaAtual));
+      applyTema(temaAtual);
+    }
+  } catch(e){}
+}
+
+async function salvarTema(){
+  localStorage.setItem('fa_tema', JSON.stringify(temaAtual));
+  applyTema(temaAtual);
+  const spn = $('tema-save-spinner'), txt = $('tema-save-txt');
+  if(spn) spn.style.display='inline-block';
+  if(txt) txt.textContent = 'Salvando...';
+  try{
+    await gasCall('saveTema',{email:state.user.email, planilhaId:state.user.planilhaId, tema:temaAtual});
+    showToast('✅ Tema salvo!');
+  } catch(e){ showToast('Salvo localmente','inf'); }
+  if(spn) spn.style.display='none';
+  if(txt) txt.textContent = '💾 Salvar';
+  closeOv('ov-tema');
+}
+
+function resetTema(){
+  temaAtual = {modo:'escuro',accent:'#22d3ee',accent2:'#818cf8',fontBody:"'Plus Jakarta Sans', sans-serif",fontSize:14,radius:14};
+  applyTema(temaAtual);
+  abrirModalTema(); // re-render UI
+}
+
+function abrirModalTema(){
+  // Atualiza UI do modal com temaAtual
+  // Modo
+  document.querySelectorAll('.tema-modo-btn').forEach(b => b.classList.remove('on'));
+  const modoEl = document.getElementById('modo-'+temaAtual.modo);
+  if(modoEl) modoEl.classList.add('on');
+  // Accent
+  document.querySelectorAll('#tema-accents .tema-cor').forEach(b => {
+    b.classList.toggle('on', b.dataset.col === temaAtual.accent);
+  });
+  // Fonte
+  document.querySelectorAll('#tema-fontes .tema-fonte-btn').forEach(b => {
+    b.classList.toggle('on', b.dataset.font === temaAtual.fontBody);
+  });
+  // Tamanho
+  document.querySelectorAll('#tema-sizes .tema-size-btn').forEach(b => {
+    b.classList.toggle('on', parseInt(b.dataset.sz) === temaAtual.fontSize);
+  });
+  // Radius
+  document.querySelectorAll('#tema-radius .tema-radius-btn').forEach(b => {
+    b.classList.toggle('on', parseInt(b.dataset.r) === temaAtual.radius);
+  });
+  openOv('ov-tema');
+}
+
+function setModo(modo){
+  temaAtual.modo = modo;
+  document.querySelectorAll('.tema-modo-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById('modo-'+modo)?.classList.add('on');
+  applyTema(temaAtual);
+}
+
+function setAccent(acc, acc2){
+  temaAtual.accent = acc;
+  temaAtual.accent2 = acc2;
+  document.querySelectorAll('#tema-accents .tema-cor').forEach(b => {
+    b.classList.toggle('on', b.dataset.col === acc);
+  });
+  applyTema(temaAtual);
+}
+
+function setFonte(el){
+  temaAtual.fontBody = el.dataset.font;
+  document.querySelectorAll('#tema-fontes .tema-fonte-btn').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  applyTema(temaAtual);
+}
+
+function setFontSize(sz){
+  temaAtual.fontSize = sz;
+  document.querySelectorAll('#tema-sizes .tema-size-btn').forEach(b => {
+    b.classList.toggle('on', parseInt(b.dataset.sz) === sz);
+  });
+  applyTema(temaAtual);
+}
+
+function setRadius(r){
+  temaAtual.radius = r;
+  document.querySelectorAll('#tema-radius .tema-radius-btn').forEach(b => {
+    b.classList.toggle('on', parseInt(b.dataset.r) === r);
+  });
+  applyTema(temaAtual);
+}
+
 /* ═══════════════════════════════════════════════════════
    UNIFIED INIT
 ═══════════════════════════════════════════════════════ */
@@ -3715,6 +4059,125 @@ function closeAdAndGoAssinar(){ closeAd(); goPage('assinar'); }
     <button class="btn btn-p" style="width:100%;font-size:14px" onclick="document.getElementById('pag-confirm-popup').style.display='none';goPage('dash')">
       🚀 Começar a usar
     </button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ MODAL: TEMA ═══════════════════════ -->
+<div class="ov" id="ov-tema">
+  <div class="modal" style="max-height:92vh;overflow-y:auto">
+    <div class="mt">🎨 <span>Personalizar Tema</span><button class="mc" onclick="closeOv('ov-tema')">✕</button></div>
+
+    <!-- MODO CLARO/ESCURO -->
+    <div class="slabel">Modo</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div id="modo-escuro" class="tema-modo-btn on" onclick="setModo('escuro')">
+        <div style="font-size:20px;margin-bottom:4px">🌙</div>
+        <div style="font-size:12px;font-weight:700">Escuro</div>
+        <div style="font-size:10px;color:var(--t2)">Noturno</div>
+      </div>
+      <div id="modo-claro" class="tema-modo-btn" onclick="setModo('claro')">
+        <div style="font-size:20px;margin-bottom:4px">☀️</div>
+        <div style="font-size:12px;font-weight:700">Claro</div>
+        <div style="font-size:10px;color:var(--t2)">Diurno</div>
+      </div>
+    </div>
+
+    <!-- COR DE DESTAQUE (ACCENT) -->
+    <div class="slabel">Cor Principal</div>
+    <div class="tema-cores" id="tema-accents" style="margin-bottom:14px">
+      <div class="tema-cor" data-col="#22d3ee" style="background:#22d3ee" onclick="setAccent('#22d3ee','#818cf8')" title="Ciano"></div>
+      <div class="tema-cor" data-col="#818cf8" style="background:#818cf8" onclick="setAccent('#818cf8','#22d3ee')" title="Índigo"></div>
+      <div class="tema-cor" data-col="#34d399" style="background:#34d399" onclick="setAccent('#34d399','#059669')" title="Verde"></div>
+      <div class="tema-cor" data-col="#f472b6" style="background:#f472b6" onclick="setAccent('#f472b6','#a78bfa')" title="Rosa"></div>
+      <div class="tema-cor" data-col="#fb923c" style="background:#fb923c" onclick="setAccent('#fb923c','#fbbf24')" title="Laranja"></div>
+      <div class="tema-cor" data-col="#a78bfa" style="background:#a78bfa" onclick="setAccent('#a78bfa','#f472b6')" title="Lilás"></div>
+      <div class="tema-cor" data-col="#fbbf24" style="background:#fbbf24" onclick="setAccent('#fbbf24','#f97316')" title="Amarelo"></div>
+      <div class="tema-cor" data-col="#60a5fa" style="background:#60a5fa" onclick="setAccent('#60a5fa','#818cf8')" title="Azul"></div>
+    </div>
+
+    <!-- FONTE -->
+    <div class="slabel">Fonte</div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px" id="tema-fontes">
+      <div class="tema-fonte-btn on" data-font="'Plus Jakarta Sans', sans-serif" onclick="setFonte(this)">
+        <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700">Plus Jakarta Sans</span>
+        <span style="font-size:10px;color:var(--t2)">Padrão</span>
+      </div>
+      <div class="tema-fonte-btn" data-font="'Inter', sans-serif" onclick="setFonte(this)">
+        <span style="font-family:'Inter',sans-serif;font-weight:700">Inter</span>
+        <span style="font-size:10px;color:var(--t2)">Moderna</span>
+      </div>
+      <div class="tema-fonte-btn" data-font="'Roboto', sans-serif" onclick="setFonte(this)">
+        <span style="font-family:'Roboto',sans-serif;font-weight:700">Roboto</span>
+        <span style="font-size:10px;color:var(--t2)">Google</span>
+      </div>
+      <div class="tema-fonte-btn" data-font="'DM Sans', sans-serif" onclick="setFonte(this)">
+        <span style="font-family:'DM Sans',sans-serif;font-weight:700">DM Sans</span>
+        <span style="font-size:10px;color:var(--t2)">Arredondada</span>
+      </div>
+      <div class="tema-fonte-btn" data-font="system-ui, sans-serif" onclick="setFonte(this)">
+        <span style="font-weight:700">Sistema</span>
+        <span style="font-size:10px;color:var(--t2)">Fonte do celular</span>
+      </div>
+    </div>
+
+    <!-- TAMANHO DA FONTE -->
+    <div class="slabel">Tamanho da Fonte</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px" id="tema-sizes">
+      <div class="tema-size-btn" data-sz="12" onclick="setFontSize(12)">
+        <span style="font-size:11px">Aa</span><span style="font-size:9px;color:var(--t2)">Pequena</span>
+      </div>
+      <div class="tema-size-btn on" data-sz="14" onclick="setFontSize(14)">
+        <span style="font-size:14px">Aa</span><span style="font-size:9px;color:var(--t2)">Normal</span>
+      </div>
+      <div class="tema-size-btn" data-sz="16" onclick="setFontSize(16)">
+        <span style="font-size:16px">Aa</span><span style="font-size:9px;color:var(--t2)">Grande</span>
+      </div>
+      <div class="tema-size-btn" data-sz="18" onclick="setFontSize(18)">
+        <span style="font-size:18px">Aa</span><span style="font-size:9px;color:var(--t2)">XL</span>
+      </div>
+    </div>
+
+    <!-- BORDAS -->
+    <div class="slabel">Arredondamento</div>
+    <div style="display:flex;gap:8px;margin-bottom:18px" id="tema-radius">
+      <div class="tema-radius-btn" data-r="4" onclick="setRadius(4)">
+        <div style="width:26px;height:26px;background:var(--acc);border-radius:4px;margin:0 auto 4px"></div>
+        <span style="font-size:9px;color:var(--t2)">Quadrado</span>
+      </div>
+      <div class="tema-radius-btn on" data-r="14" onclick="setRadius(14)">
+        <div style="width:26px;height:26px;background:var(--acc);border-radius:14px;margin:0 auto 4px"></div>
+        <span style="font-size:9px;color:var(--t2)">Normal</span>
+      </div>
+      <div class="tema-radius-btn" data-r="20" onclick="setRadius(20)">
+        <div style="width:26px;height:26px;background:var(--acc);border-radius:20px;margin:0 auto 4px"></div>
+        <span style="font-size:9px;color:var(--t2)">Arredondado</span>
+      </div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="slabel">Preview</div>
+    <div id="tema-preview" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:16px">
+      <div style="font-family:var(--font-body);font-size:var(--font-size)">
+        <div style="font-weight:800;color:var(--acc);margin-bottom:6px">FinanceiroApp</div>
+        <div style="font-size:calc(var(--font-size) - 2px);color:var(--t2);margin-bottom:8px">Mês atual · Saldo</div>
+        <div style="display:flex;gap:7px">
+          <span style="background:rgba(52,211,153,.15);color:var(--g);border-radius:var(--r3);padding:4px 9px;font-size:calc(var(--font-size) - 3px);font-weight:700">+ R$ 5.000</span>
+          <span style="background:rgba(248,113,113,.15);color:var(--red);border-radius:var(--r3);padding:4px 9px;font-size:calc(var(--font-size) - 3px);font-weight:700">- R$ 2.300</span>
+        </div>
+        <div style="margin-top:10px;height:6px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:60%;background:var(--acc);border-radius:99px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-g" onclick="resetTema()">↺ Padrão</button>
+      <button class="btn btn-p" onclick="salvarTema()">
+        <span id="tema-save-spinner" style="display:none" class="spinner"></span>
+        <span id="tema-save-txt">💾 Salvar</span>
+      </button>
+    </div>
   </div>
 </div>
 
