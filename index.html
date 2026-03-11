@@ -1346,24 +1346,22 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
    CONFIG — ÚNICO VALOR FIXO: URL do Apps Script
    Todo o resto vem da aba "configuracoes" da planilha
 ═══════════════════════════════════════════════════════ */
-// GAS_URL carregado do config.json (mesmo domínio — sem CORS)
-// Para atualizar a URL da implantação: edite apenas o config.json no GitHub
-let GAS_URL = ''; // preenchido por carregarGasUrl()
+// GAS_URL — valor padrão já preenchido (funciona imediatamente)
+// Para trocar sem editar este arquivo: atualize o config.json no GitHub
+let GAS_URL = 'https://script.google.com/macros/s/AKfycbyjIwSUgaGxjA7aptEn3RnG4QMoB3E4DttxGTczKIWbl-hKydCz65dRwCTup1syLrq_xw/exec';
 const AD_INTERVAL_MIN = 8;
 
 async function carregarGasUrl() {
   try {
-    // Busca config.json na raiz do GitHub Pages (mesmo origin — sem CORS)
     const r = await fetch('./config.json?v=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return false;
     const j = await r.json();
-    if (j.gasUrl) {
-      GAS_URL = j.gasUrl;
+    if (j.gasUrl && j.gasUrl.startsWith('https://')) {
+      GAS_URL = j.gasUrl; // sobrescreve com config.json se disponível
       return true;
     }
   } catch(e) {}
-  // Fallback: URL hardcoded como segurança
-  GAS_URL = 'https://script.google.com/macros/s/AKfycbyjIwSUgaGxjA7aptEn3RnG4QMoB3E4DttxGTczKIWbl-hKydCz65dRwCTup1syLrq_xw/exec';
-  return false;
+  return false; // mantém o padrão já definido
 }
 
 // Configurações dinâmicas — carregadas do servidor no boot
@@ -1514,6 +1512,11 @@ async function doLogin(){
 
 async function doCadastro(){
   hideAl('al-cad'); hideAl('al-cad-ok');
+  // Verificar se app está aceitando cadastros
+  if(appConfig.appAtivo === 'nao'){
+    showAl('al-cad', appConfig.msgBloqueio || 'Novos cadastros temporariamente suspensos.');
+    return;
+  }
   const nome = $('cad-nome').value.trim();
   const sobrenome = $('cad-sobrenome').value.trim();
   const email = $('cad-email').value.trim();
