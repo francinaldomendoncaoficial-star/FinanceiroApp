@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#050a12">
+<title>FinanceiroApp — Controle Financeiro Inteligente</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   TOKENS & RESET
+═══════════════════════════════════════════════ */
+:root{
+  --bg:#050a12;--s1:#0b1522;--s2:#0f1d30;--s3:#162540;
+  --bd:#1d3050;--bd2:#243a5e;
+  --acc:#22d3ee;--acc2:#818cf8;--g:#34d399;
+  --red:#f87171;--yel:#fbbf24;--pur:#a78bfa;--pnk:#f472b6;
+  --text:#e8f0fe;--t2:#7a96b8;--t3:#3d5470;
+  --r:14px;--r2:10px;--r3:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
+
+/* ═══════════════════════════════════════════════
+   AUTH SCREEN
+═══════════════════════════════════════════════ */
+#auth-screen{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:20px;
+  background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(34,211,238,.08),transparent),
+             radial-gradient(ellipse 60% 40% at 80% 100%,rgba(129,140,248,.06),transparent),
+             var(--bg);
+}
+.auth-box{
+  background:var(--s1);border:1px solid var(--bd2);border-radius:20px;
+  padding:32px 28px;width:100%;max-width:420px;
+  box-shadow:0 40px 80px rgba(0,0,0,.5),0 0 0 1px rgba(34,211,238,.04);
+}
+.auth-logo{
+  display:flex;align-items:center;gap:10px;margin-bottom:28px;
+}
+.auth-logo-icon{
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;box-shadow:0 0 24px rgba(34,211,238,.35);
+}
+.auth-logo-name{font-family:'Instrument Serif',serif;font-size:22px}
+.auth-logo-name span{color:var(--acc)}
+.auth-tabs{display:flex;gap:5px;margin-bottom:22px;background:var(--s2);border-radius:var(--r2);padding:4px}
+.auth-tab{flex:1;padding:7px;border-radius:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s;color:var(--t2)}
+.auth-tab.on{background:var(--s3);color:var(--text);border:1px solid var(--bd)}
+.auth-section{display:none}
+.auth-section.on{display:block}
+
+/* Forms */
+.af{margin-bottom:13px}
+.af label{display:block;font-size:10px;color:var(--t2);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}
+.af input{
+  width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r2);
+  padding:11px 13px;color:var(--text);font-size:14px;font-family:'Plus Jakarta Sans',sans-serif;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.af input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(34,211,238,.1)}
+.af-icon{position:relative}
+.af-icon span{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none}
+.af-icon input{padding-left:36px}
+.af-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:13px;color:var(--t2)}
+
+/* Checkbox */
+.ck-wrap{display:flex;align-items:flex-start;gap:9px;margin-bottom:13px;cursor:pointer}
+.ck-box{
+  width:18px;height:18px;border:2px solid var(--bd);border-radius:5px;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  margin-top:1px;transition:all .15s;background:var(--s2);
+}
+.ck-box.on{background:var(--acc);border-color:var(--acc)}
+.ck-label{font-size:11px;color:var(--t2);line-height:1.5}
+.ck-label a{color:var(--acc);text-decoration:none}
+
+/* Buttons */
+.btn-auth{
+  width:100%;padding:13px;border:none;border-radius:var(--r2);
+  cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:13px;font-weight:800;letter-spacing:.3px;
+  transition:all .15s;margin-bottom:8px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#040c18;box-shadow:0 4px 20px rgba(34,211,238,.25)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(34,211,238,.35)}
+.btn-primary:active{transform:scale(.98)}
+.btn-google{background:rgba(255,255,255,.06);border:1px solid var(--bd);color:var(--text)}
+.btn-google:hover{background:rgba(255,255,255,.1)}
+.btn-ghost{background:none;border:none;color:var(--acc);font-size:11px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;padding:4px}
+.divider-or{display:flex;align-items:center;gap:10px;margin:10px 0;color:var(--t3);font-size:11px}
+.divider-or::before,.divider-or::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* Alerts */
+.al{padding:10px 12px;border-radius:var(--r2);font-size:11px;margin-bottom:10px;display:flex;gap:7px;line-height:1.5;display:none}
+.al.on{display:flex}
+.a-ok{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.18);color:#6ee7b7}
+.a-w{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.18);color:#fcd34d}
+.a-e{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.18);color:#fca5a5}
+.a-i{background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.18);color:#67e8f9}
+
+/* ═══════════════════════════════════════════════
+   EMAIL CONFIRM SCREEN
+═══════════════════════════════════════════════ */
+#confirm-screen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px;
+  background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(34,211,238,.07),transparent),var(--bg);}
+.confirm-box{background:var(--s1);border:1px solid var(--bd2);border-radius:20px;padding:36px 28px;width:100%;max-width:380px;text-align:center}
+.confirm-icon{font-size:48px;margin-bottom:16px;display:block}
+.confirm-title{font-family:'Instrument Serif',serif;font-size:22px;margin-bottom:8px}
+.confirm-sub{font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:24px}
+.code-inputs{display:flex;gap:8px;justify-content:center;margin-bottom:20px}
+.code-input{
+  width:46px;height:52px;background:var(--s2);border:2px solid var(--bd);
+  border-radius:var(--r2);text-align:center;font-size:20px;font-weight:700;
+  color:var(--text);outline:none;transition:border-color .2s;font-family:'Plus Jakarta Sans',sans-serif;
+}
+.code-input:focus{border-color:var(--acc)}
+
+/* ═══════════════════════════════════════════════
+   APP SCREEN (MAIN)
+═══════════════════════════════════════════════ */
+#app-screen{display:none}
+
+/* Header */
+.hdr{
+  background:linear-gradient(180deg,rgba(10,20,34,.98),rgba(5,10,18,.95));
+  backdrop-filter:blur(12px);padding:12px 14px 10px;
+  display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bd);
+  position:sticky;top:0;z-index:200;
+}
+.hdr-logo{width:32px;height:32px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 16px rgba(34,211,238,.3)}
+.hdr-t{flex:1;min-width:0}
+.hdr-name{font-family:'Instrument Serif',serif;font-size:17px;line-height:1}
+.hdr-sub{font-size:9px;color:var(--t2);margin-top:1px;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-btns{display:flex;gap:5px;flex-shrink:0}
+.hbtn{background:rgba(255,255,255,.05);border:1px solid var(--bd);color:var(--t2);padding:5px 9px;border-radius:var(--r3);font-size:11px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s}
+.hbtn.a{background:rgba(34,211,238,.12);border-color:rgba(34,211,238,.3);color:var(--acc)}
+.hbtn.warn{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.3);color:var(--yel)}
+.hbtn:active{opacity:.7}
+
+/* Nav */
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:300}
+.nav-bar{background:rgba(8,16,30,.97);backdrop-filter:blur(20px);border-top:1px solid var(--bd);display:flex;max-width:620px;margin:0 auto;padding:5px 0 max(5px,env(safe-area-inset-bottom))}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0;transition:all .15s}
+.ni-i{font-size:18px;filter:grayscale(1) opacity(.4);transition:all .2s}
+.ni-l{font-size:9px;color:var(--t2);font-weight:600;letter-spacing:.3px;text-transform:uppercase;transition:all .2s}
+.ni.on .ni-i{filter:none;transform:scale(1.12)}
+.ni.on .ni-l{color:var(--acc);font-weight:800}
+
+/* Pages */
+.pg{display:none;padding:12px 12px 100px;max-width:620px;margin:0 auto}
+.pg.on{display:block}
+.ptitle{font-family:'Instrument Serif',serif;font-size:20px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ptitle small{font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;color:var(--t2);font-weight:500}
+
+/* Cards */
+.card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:9px;overflow:hidden}
+.ch{padding:11px 13px 9px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.ci{width:28px;height:28px;border-radius:var(--r3);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.cm{flex:1;min-width:0}
+.ct{font-size:13px;font-weight:700}
+.cs{font-size:10px;color:var(--t2);margin-top:1px}
+.cb{padding:0 13px 13px;display:none}
+.cb.o{display:block}
+.chv{color:var(--t3);font-size:10px;transition:transform .2s}
+.chv.o{transform:rotate(180deg)}
+
+/* Dash widgets */
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}
+.dw{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:13px}
+.dw-full{grid-column:1/-1}
+.dw-l{font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.dw-v{font-family:'Instrument Serif',serif;font-size:22px;color:var(--text);line-height:1}
+.dw-v.ok{color:var(--g)}.dw-v.err{color:var(--red)}.dw-v.acc{color:var(--acc)}
+.dw-s{font-size:10px;color:var(--t3);margin-top:4px}
+
+/* Tx items */
+.txi{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid rgba(29,48,80,.4);cursor:pointer;transition:opacity .15s}
+.txi:last-child{border-bottom:none}
+.txi:active{opacity:.6}
+.txi-i{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.txi-m{flex:1;min-width:0}
+.txi-d{font-size:12px;font-weight:600}
+.txi-s{font-size:10px;color:var(--t2);margin-top:1px}
+.txi-a{text-align:right;flex-shrink:0}
+.txi-v{font-size:13px;font-weight:700}
+.txi-dt{font-size:10px;color:var(--t2);margin-top:1px}
+.v-inc{color:var(--g)}.v-exp{color:var(--red)}.v-inv{color:var(--acc2)}
+
+/* Forms inline */
+.fi{margin-bottom:9px}
+.fi label{display:block;font-size:10px;color:var(--t2);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
+.fi input,.fi select,.fi textarea{
+  width:100%;background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);
+  padding:9px 11px;color:var(--text);font-size:14px;font-family:'Plus Jakarta Sans',sans-serif;
+  outline:none;transition:border-color .2s;-webkit-appearance:none;
+}
+.fi input:focus,.fi select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(34,211,238,.1)}
+.fi select option{background:var(--s1)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px}
+.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:9px}
+
+/* Buttons app */
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;border-radius:var(--r);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;border:none;transition:all .15s}
+.btn-p{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#040c18}
+.btn-p:active{transform:scale(.98)}
+.btn-ok{background:linear-gradient(135deg,#059669,var(--g));color:#fff}
+.btn-g{background:rgba(255,255,255,.05);border:1px solid var(--bd);color:var(--t2)}
+.btn-d{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.22);color:var(--red)}
+.btn-sm{padding:6px 10px;font-size:11px;width:auto;border-radius:var(--r3)}
+.btn-pix{background:linear-gradient(135deg,#00b8a9,#00e5cc);color:#002;font-size:14px;font-weight:800;padding:14px}
+
+/* Toast */
+.toast{position:fixed;top:66px;left:50%;transform:translateX(-50%) translateY(-8px);background:var(--g);color:#04140b;padding:8px 16px;border-radius:99px;font-size:12px;font-weight:700;z-index:1000;opacity:0;transition:all .25s;white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.er{background:var(--red);color:#fff}
+.toast.inf{background:var(--acc);color:#03161c}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700}
+.b-ok{background:rgba(52,211,153,.14);color:var(--g)}
+.b-e{background:rgba(248,113,113,.14);color:var(--red)}
+.b-w{background:rgba(251,191,36,.14);color:var(--yel)}
+.b-a{background:rgba(34,211,238,.14);color:var(--acc)}
+.b-p{background:rgba(167,139,250,.14);color:var(--pur)}
+
+/* Modal */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:500;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(5px)}
+.ov.on{display:flex}
+.modal{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r) var(--r) 0 0;width:100%;max-width:520px;max-height:94vh;overflow-y:auto;padding:16px 14px max(16px,env(safe-area-inset-bottom));animation:su .22s ease}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mt{font-family:'Instrument Serif',serif;font-size:17px;margin-bottom:13px;display:flex;align-items:center;gap:7px}
+.mc{margin-left:auto;background:rgba(255,255,255,.07);border:1px solid var(--bd);color:var(--t2);width:27px;height:27px;border-radius:var(--r3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* Trial Banner */
+.trial-banner{
+  background:linear-gradient(135deg,rgba(251,191,36,.1),rgba(251,191,36,.05));
+  border:1px solid rgba(251,191,36,.3);border-radius:var(--r2);
+  padding:10px 13px;margin-bottom:10px;display:flex;align-items:center;gap:10px;
+  cursor:pointer;
+}
+.trial-banner-txt{flex:1;min-width:0}
+.trial-banner-t{font-size:11px;font-weight:700;color:var(--yel)}
+.trial-banner-s{font-size:10px;color:var(--t2);margin-top:1px}
+.trial-banner-btn{background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.35);color:var(--yel);padding:5px 10px;border-radius:var(--r3);font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0}
+
+/* Blocked Banner */
+.blocked-banner{
+  background:linear-gradient(135deg,rgba(248,113,113,.12),rgba(248,113,113,.05));
+  border:1px solid rgba(248,113,113,.3);border-radius:var(--r2);
+  padding:10px 13px;margin-bottom:10px;
+}
+.blocked-banner-t{font-size:12px;font-weight:700;color:var(--red);margin-bottom:3px}
+.blocked-banner-s{font-size:10px;color:var(--t2);line-height:1.5}
+
+/* Assinatura page */
+.plan-card{
+  background:linear-gradient(135deg,var(--s3),var(--s2));
+  border:1px solid var(--bd2);border-radius:var(--r);padding:20px;margin-bottom:10px;position:relative;overflow:hidden;
+}
+.plan-card::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(circle,rgba(34,211,238,.08),transparent);
+  pointer-events:none;
+}
+.plan-badge{
+  display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;
+  font-size:10px;font-weight:700;margin-bottom:10px;
+  background:linear-gradient(135deg,rgba(34,211,238,.2),rgba(129,140,248,.2));
+  color:var(--acc);border:1px solid rgba(34,211,238,.2);
+}
+.plan-price{font-family:'Instrument Serif',serif;font-size:36px;margin-bottom:4px}
+.plan-price span{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:var(--t2)}
+.plan-features{margin:14px 0;display:flex;flex-direction:column;gap:6px}
+.plan-feat{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--t2)}
+.plan-feat .ok{color:var(--g);font-size:14px}
+
+/* PIX box */
+.pix-box{
+  background:rgba(0,180,150,.05);border:1px solid rgba(0,180,150,.2);
+  border-radius:var(--r2);padding:14px;margin-bottom:10px;text-align:center;
+}
+.pix-key{
+  background:var(--s1);border:1px solid var(--bd);border-radius:var(--r3);
+  padding:10px 13px;font-size:12px;font-family:monospace;
+  word-break:break-all;margin:10px 0;color:var(--acc);
+}
+.pix-status{font-size:11px;color:var(--t2);margin-top:6px}
+
+/* Config page */
+.cfg-item{
+  display:flex;align-items:center;gap:12px;
+  background:var(--s2);border:1px solid var(--bd);border-radius:var(--r2);
+  padding:12px 13px;margin-bottom:7px;cursor:pointer;transition:all .15s;
+}
+.cfg-item:hover{border-color:var(--bd2)}
+.cfg-icon{font-size:18px;width:32px;text-align:center;flex-shrink:0}
+.cfg-info{flex:1;min-width:0}
+.cfg-t{font-size:13px;font-weight:600}
+.cfg-s{font-size:10px;color:var(--t2);margin-top:1px}
+.cfg-arr{color:var(--t3);font-size:11px}
+
+/* Toggle switch */
+.toggle{
+  width:40px;height:22px;background:var(--bd);border-radius:99px;
+  position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;
+}
+.toggle.on{background:var(--acc)}
+.toggle-dot{
+  width:16px;height:16px;background:#fff;border-radius:50%;
+  position:absolute;top:3px;left:3px;transition:left .2s;
+}
+.toggle.on .toggle-dot{left:21px}
+
+/* Loading spinner */
+.spinner{
+  width:20px;height:20px;border:2px solid rgba(34,211,238,.2);
+  border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Popup ad */
+.ad-popup{
+  position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.85);
+  display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);
+}
+.ad-popup.on{display:flex}
+.ad-box{
+  background:var(--s1);border:1px solid var(--bd2);border-radius:20px;
+  padding:24px;width:100%;max-width:360px;text-align:center;
+  animation:popIn .28s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.ad-icon{font-size:48px;margin-bottom:12px;display:block}
+.ad-title{font-family:'Instrument Serif',serif;font-size:22px;margin-bottom:6px}
+.ad-sub{font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:18px}
+.ad-close{font-size:10px;color:var(--t3);cursor:pointer;margin-top:8px;display:block}
+
+/* Progress bar */
+.prog-bg{height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin:6px 0}
+.prog-fill{height:100%;border-radius:99px;transition:width .5s}
+
+/* Divider */
+.divider{height:1px;background:var(--bd);margin:10px 0}
+.slabel{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+
+/* Tabs */
+.tabs{display:flex;gap:5px;margin-bottom:11px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;background:var(--s2);border:1px solid var(--bd);color:var(--t2);cursor:pointer;transition:all .15s}
+.tab.on{background:rgba(34,211,238,.12);border-color:var(--acc);color:var(--acc)}
+
+/* Responsive desktop */
+@media(min-width:640px){
+  .pg{padding:16px 20px 100px}
+  .auth-box{padding:40px 36px}
+  .dg{grid-template-columns:repeat(3,1fr)}
+  .modal{border-radius:var(--r);max-height:88vh;margin-bottom:40px}
+  .ov{align-items:center}
+}
+@media(min-width:1024px){
+  body{display:flex;justify-content:center}
+  #app-screen{width:100%;max-width:680px}
+  .hdr{border-radius:0}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     TOAST
+═══════════════════════════════════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════
+     AUTH SCREEN
+═══════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">💎</div>
+      <div class="auth-logo-name">Financeiro<span>App</span></div>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab on" id="tab-login" onclick="authTab('login')">Entrar</div>
+      <div class="auth-tab" id="tab-cadastro" onclick="authTab('cadastro')">Criar Conta</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="auth-section on" id="sec-login">
+      <div id="al-login" class="al a-e"><span>⚠️</span><span id="al-login-msg"></span></div>
+      <div class="af af-icon">
+        <label>E-mail</label>
+        <span>📧</span>
+        <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div class="af af-icon">
+        <label>Senha</label>
+        <span>🔒</span>
+        <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password">
+        <span class="af-eye" onclick="togglePwd('login-senha')">👁</span>
+      </div>
+      <div style="text-align:right;margin-bottom:13px">
+        <button class="btn-ghost" onclick="authTab('recuperar')">Esqueci minha senha</button>
+      </div>
+      <button class="btn-auth btn-primary" id="btn-login" onclick="doLogin()">
+        <span id="login-spinner" style="display:none" class="spinner"></span>
+        <span id="login-txt">Entrar</span>
+      </button>
+      <div class="divider-or">ou</div>
+      <button class="btn-auth btn-google" onclick="loginGoogle()">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Entrar com Google
+      </button>
+    </div>
+
+    <!-- CADASTRO -->
+    <div class="auth-section" id="sec-cadastro">
+      <div id="al-cad" class="al a-e"><span>⚠️</span><span id="al-cad-msg"></span></div>
+      <div id="al-cad-ok" class="al a-ok"><span>✅</span><span id="al-cad-ok-msg"></span></div>
+      <div class="f2">
+        <div class="af"><label>Nome</label><input type="text" id="cad-nome" placeholder="Seu nome" autocomplete="given-name"></div>
+        <div class="af"><label>Sobrenome</label><input type="text" id="cad-sobrenome" placeholder="Sobrenome" autocomplete="family-name"></div>
+      </div>
+      <div class="af af-icon">
+        <label>E-mail</label>
+        <span>📧</span>
+        <input type="email" id="cad-email" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div class="af af-icon">
+        <label>Senha</label>
+        <span>🔒</span>
+        <input type="password" id="cad-senha" placeholder="Mínimo 6 caracteres">
+        <span class="af-eye" onclick="togglePwd('cad-senha')">👁</span>
+      </div>
+      <div class="af af-icon">
+        <label>Confirmar Senha</label>
+        <span>🔒</span>
+        <input type="password" id="cad-senha2" placeholder="Repita a senha">
+      </div>
+      <div class="ck-wrap" onclick="toggleCk('ck-termos')">
+        <div class="ck-box" id="ck-termos"></div>
+        <div class="ck-label">Li e concordo com os <a href="#" onclick="openTermos(event)">Termos de Uso</a> e a <a href="#" onclick="openPrivacidade(event)">Política de Privacidade</a></div>
+      </div>
+      <button class="btn-auth btn-primary" id="btn-cad" onclick="doCadastro()">
+        <span id="cad-spinner" style="display:none" class="spinner"></span>
+        <span id="cad-txt">Criar Conta Grátis</span>
+      </button>
+      <div class="divider-or">ou</div>
+      <button class="btn-auth btn-google" onclick="loginGoogle()">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Cadastrar com Google
+      </button>
+    </div>
+
+    <!-- RECUPERAR SENHA -->
+    <div class="auth-section" id="sec-recuperar">
+      <div id="al-rec" class="al a-e"><span>⚠️</span><span id="al-rec-msg"></span></div>
+      <div id="al-rec-ok" class="al a-ok"><span>✅</span><span>Código enviado! Verifique seu e-mail.</span></div>
+      <p style="font-size:12px;color:var(--t2);margin-bottom:14px;line-height:1.6">
+        Informe seu e-mail e enviaremos um código para redefinir sua senha.
+      </p>
+      <div class="af af-icon">
+        <label>E-mail</label>
+        <span>📧</span>
+        <input type="email" id="rec-email" placeholder="seu@email.com">
+      </div>
+      <button class="btn-auth btn-primary" onclick="doRecuperar()">Enviar Código</button>
+      <div style="text-align:center;margin-top:8px">
+        <button class="btn-ghost" onclick="authTab('login')">← Voltar ao login</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     EMAIL CONFIRM SCREEN
+═══════════════════════════════════════════ -->
+<div id="confirm-screen" style="display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(34,211,238,.07),transparent),var(--bg)">
+  <div class="confirm-box">
+    <span class="confirm-icon">📬</span>
+    <div class="confirm-title">Confirme seu e-mail</div>
+    <p class="confirm-sub">Enviamos um código de 6 dígitos para <strong id="confirm-email-txt" style="color:var(--acc)"></strong>. Digite abaixo para ativar sua conta.</p>
+    <div class="code-inputs">
+      <input class="code-input" maxlength="1" id="ci0" oninput="codeNext(0)" onkeydown="codePrev(event,0)">
+      <input class="code-input" maxlength="1" id="ci1" oninput="codeNext(1)" onkeydown="codePrev(event,1)">
+      <input class="code-input" maxlength="1" id="ci2" oninput="codeNext(2)" onkeydown="codePrev(event,2)">
+      <input class="code-input" maxlength="1" id="ci3" oninput="codeNext(3)" onkeydown="codePrev(event,3)">
+      <input class="code-input" maxlength="1" id="ci4" oninput="codeNext(4)" onkeydown="codePrev(event,4)">
+      <input class="code-input" maxlength="1" id="ci5" oninput="codeNext(5)" onkeydown="codePrev(event,5)">
+    </div>
+    <div id="al-confirm" class="al a-e" style="text-align:left"><span>⚠️</span><span id="al-confirm-msg"></span></div>
+    <button class="btn-auth btn-primary" onclick="doConfirmCode()">
+      <span id="confirm-spinner" style="display:none" class="spinner"></span>
+      <span id="confirm-txt">Confirmar</span>
+    </button>
+    <div style="margin-top:10px;text-align:center">
+      <button class="btn-ghost" onclick="reenviarCodigo()">Reenviar código</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     APP SCREEN
+═══════════════════════════════════════════ -->
+<div id="app-screen">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-logo">💎</div>
+    <div class="hdr-t">
+      <div class="hdr-name">Financeiro<span style="color:var(--acc)">App</span></div>
+      <div class="hdr-sub" id="hdr-user">Carregando...</div>
+    </div>
+    <div class="hdr-btns">
+      <button class="hbtn warn" id="btn-trial-hdr" onclick="goPage('assinar')" style="display:none">⏱ Trial</button>
+      <button class="hbtn a" onclick="openAddTx()">＋</button>
+      <button class="hbtn" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <!-- PAGES -->
+  <div class="pg on" id="pg-dash"></div>
+  <div class="pg" id="pg-tx"></div>
+  <div class="pg" id="pg-rel"></div>
+  <div class="pg" id="pg-assinar"></div>
+  <div class="pg" id="pg-config"></div>
+
+  <!-- NAV -->
+  <div class="nav"><div class="nav-bar">
+    <div class="ni on" id="nav-dash" onclick="goPage('dash')"><div class="ni-i">🏠</div><div class="ni-l">Início</div></div>
+    <div class="ni" id="nav-tx" onclick="goPage('tx')"><div class="ni-i">📋</div><div class="ni-l">Lançar</div></div>
+    <div class="ni" id="nav-rel" onclick="goPage('rel')"><div class="ni-i">📊</div><div class="ni-l">Relatórios</div></div>
+    <div class="ni" id="nav-assinar" onclick="goPage('assinar')"><div class="ni-i">⭐</div><div class="ni-l">Assinar</div></div>
+    <div class="ni" id="nav-config" onclick="goPage('config')"><div class="ni-i">⚙️</div><div class="ni-l">Config</div></div>
+  </div></div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: ADD TRANSACTION
+═══════════════════════════════════════════ -->
+<div class="ov" id="ov-tx">
+  <div class="modal">
+    <div class="mt">➕ <span>Novo Lançamento</span><button class="mc" onclick="closeOv('ov-tx')">✕</button></div>
+    <div id="blocked-tx-msg" style="display:none">
+      <div class="blocked-banner">
+        <div class="blocked-banner-t">⛔ Período de teste encerrado</div>
+        <div class="blocked-banner-s">Assine o FinanceiroApp para continuar cadastrando lançamentos. Você ainda pode visualizar seus dados.</div>
+      </div>
+      <button class="btn btn-p" onclick="closeOv('ov-tx');goPage('assinar')">Ver Planos de Assinatura</button>
+    </div>
+    <div id="tx-form-area">
+      <div class="f2">
+        <div class="fi"><label>Tipo</label>
+          <select id="tx-tipo">
+            <option value="despesa">📤 Despesa</option>
+            <option value="receita">📥 Receita</option>
+            <option value="investimento">📈 Investimento</option>
+          </select>
+        </div>
+        <div class="fi"><label>Data</label><input type="date" id="tx-data"></div>
+      </div>
+      <div class="fi"><label>Descrição *</label><input type="text" id="tx-desc" placeholder="Ex: Supermercado, Salário..."></div>
+      <div class="f2">
+        <div class="fi"><label>Valor (R$) *</label><input type="number" id="tx-val" placeholder="0,00" min="0" step=".01"></div>
+        <div class="fi"><label>Categoria</label>
+          <select id="tx-cat">
+            <option value="alimentacao">🍔 Alimentação</option>
+            <option value="transporte">🚗 Transporte</option>
+            <option value="saude">💊 Saúde</option>
+            <option value="lazer">🎉 Lazer</option>
+            <option value="moradia">🏠 Moradia</option>
+            <option value="educacao">📚 Educação</option>
+            <option value="salario">💰 Salário</option>
+            <option value="outros">📦 Outros</option>
+          </select>
+        </div>
+      </div>
+      <div class="fi"><label>Observações</label><input type="text" id="tx-obs" placeholder="Opcional"></div>
+      <button class="btn btn-p" onclick="saveTx()">
+        <span id="save-tx-spinner" style="display:none" class="spinner"></span>
+        <span id="save-tx-txt">Salvar Lançamento</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: TERMOS DE USO
+═══════════════════════════════════════════ -->
+<div class="ov" id="ov-termos">
+  <div class="modal">
+    <div class="mt">📄 Termos de Uso<button class="mc" onclick="closeOv('ov-termos')">✕</button></div>
+    <div style="font-size:12px;color:var(--t2);line-height:1.8">
+      <p style="font-weight:700;color:var(--text);margin-bottom:6px">1. Aceitação dos Termos</p>
+      <p style="margin-bottom:10px">Ao criar uma conta no FinanceiroApp, você concorda com estes Termos de Uso. O uso continuado do serviço implica aceitação de eventuais alterações.</p>
+      <p style="font-weight:700;color:var(--text);margin-bottom:6px">2. Período de Teste</p>
+      <p style="margin-bottom:10px">Novos usuários recebem um período de teste gratuito conforme configurado pelo administrador (padrão: 7 dias). Após o vencimento, o acesso para novos cadastros é suspenso até a assinatura.</p>
+      <p style="font-weight:700;color:var(--text);margin-bottom:6px">3. Dados do Usuário</p>
+      <p style="margin-bottom:10px">Seus dados financeiros são armazenados em uma planilha Google de sua propriedade. O FinanceiroApp não compartilha seus dados com terceiros.</p>
+      <p style="font-weight:700;color:var(--text);margin-bottom:6px">4. Pagamento</p>
+      <p style="margin-bottom:10px">O pagamento é processado via PIX. Após o pagamento, a ativação pode levar até 24h para confirmação manual pelo administrador.</p>
+      <p style="font-weight:700;color:var(--text);margin-bottom:6px">5. Rescisão</p>
+      <p>O administrador pode suspender contas que violem estes termos. Dados podem ser excluídos 30 dias após o cancelamento.</p>
+    </div>
+    <button class="btn btn-g" style="margin-top:14px" onclick="closeOv('ov-termos')">Fechar</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     AD POPUP
+═══════════════════════════════════════════ -->
+<div class="ad-popup" id="ad-popup">
+  <div class="ad-box">
+    <span class="ad-icon">🚀</span>
+    <div class="ad-title">Turbine seu controle financeiro!</div>
+    <p class="ad-sub">Com o plano vitalício do FinanceiroApp você tem acesso ilimitado, relatórios avançados e suporte prioritário — por um único pagamento.</p>
+    <button class="btn-auth btn-primary" onclick="closeAdAndGoAssinar()">Ver oferta especial →</button>
+    <span class="ad-close" onclick="closeAd()">Agora não, continuar no período de teste</span>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   CONFIG — ALTERE AQUI
+═══════════════════════════════════════════════════════ */
+const GAS_URL = 'SEU_GOOGLE_APPS_SCRIPT_URL_AQUI'; // Substitua pelo URL do seu Apps Script
+const APP_NAME = 'FinanceiroApp';
+const TRIAL_DAYS = 7;
+const PIX_KEY = 'financeiro@seudominio.com.br'; // Substitua pela sua chave PIX
+const PIX_VALOR = 'R$ 97,00'; // Valor único vitalício
+const AD_INTERVAL_MIN = 8; // minutos entre popups de propaganda (para usuários trial)
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+let state = {
+  user: null,       // {email, nome, planilhaId, status, trialExpira, assinatura}
+  txs: [],          // transações carregadas
+  pendingEmail: '', // e-mail aguardando confirmação
+  ckTermos: false,
+  adTimer: null,
+};
+
+/* ═══════════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════════ */
+function $(id){ return document.getElementById(id) }
+function showToast(msg, type='ok'){
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast on' + (type==='er'?' er':type==='inf'?' inf':'');
+  setTimeout(()=>t.className='toast',2800);
+}
+function setLoading(btnId, spinnerId, txtId, loading, label=''){
+  $(btnId).disabled = loading;
+  $(spinnerId).style.display = loading ? 'inline-block' : 'none';
+  if(label) $(txtId).textContent = label;
+}
+function showAl(id, msg='', show=true){
+  const el = $(id);
+  if(!el) return;
+  el.classList.toggle('on', show);
+  const msg_el = el.querySelector('span:last-child');
+  if(msg_el && msg) msg_el.textContent = msg;
+}
+function hideAl(id){ showAl(id, '', false); }
+function togglePwd(id){
+  const inp = $(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+function toggleCk(id){
+  const el = $(id);
+  state.ckTermos = !el.classList.contains('on');
+  el.classList.toggle('on', state.ckTermos);
+}
+function fmtMoeda(v){ return 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) }
+function fmtData(d){ return new Date(d).toLocaleDateString('pt-BR') }
+function todayISO(){ return new Date().toISOString().split('T')[0] }
+function getDaysLeft(){
+  if(!state.user?.trialExpira) return 0;
+  const diff = new Date(state.user.trialExpira) - new Date();
+  return Math.max(0, Math.ceil(diff/86400000));
+}
+function isBlocked(){
+  if(!state.user) return true;
+  if(state.user.assinatura === 'vitalicio') return false;
+  if(state.user.status === 'bloqueado') return true;
+  if(getDaysLeft() <= 0 && state.user.assinatura !== 'vitalicio') return true;
+  return false;
+}
+
+/* ═══════════════════════════════════════════════════════
+   API CALLS → Google Apps Script
+═══════════════════════════════════════════════════════ */
+async function gasCall(action, data={}){
+  const params = new URLSearchParams({ action, ...data });
+  const r = await fetch(GAS_URL + '?' + params.toString());
+  return r.json();
+}
+async function gasPost(action, data={}){
+  const body = JSON.stringify({ action, ...data });
+  const r = await fetch(GAS_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body
+  });
+  return r.json();
+}
+
+/* ═══════════════════════════════════════════════════════
+   AUTH FLOW
+═══════════════════════════════════════════════════════ */
+function authTab(tab){
+  ['login','cadastro','recuperar'].forEach(t=>{
+    $('tab-'+t)?.classList.remove('on');
+    $('sec-'+t)?.classList.remove('on');
+  });
+  $('tab-'+tab)?.classList.add('on');
+  $('sec-'+tab)?.classList.add('on');
+  // hide all alerts
+  ['al-login','al-cad','al-cad-ok','al-rec','al-rec-ok'].forEach(hideAl);
+}
+
+async function doLogin(){
+  hideAl('al-login');
+  const email = $('login-email').value.trim();
+  const senha = $('login-senha').value;
+  if(!email || !senha){ showAl('al-login','Preencha e-mail e senha'); return; }
+  setLoading('btn-login','login-spinner','login-txt',true,'Entrando...');
+  try{
+    const res = await gasCall('login',{email,senha});
+    if(res.ok){
+      state.user = res.user;
+      saveLocalSession(res.user);
+      enterApp();
+    } else {
+      showAl('al-login', res.msg || 'E-mail ou senha incorretos');
+    }
+  } catch(e){
+    showAl('al-login','Erro de conexão. Verifique o URL do Apps Script.');
+  }
+  setLoading('btn-login','login-spinner','login-txt',false,'Entrar');
+}
+
+async function doCadastro(){
+  hideAl('al-cad'); hideAl('al-cad-ok');
+  const nome = $('cad-nome').value.trim();
+  const sobrenome = $('cad-sobrenome').value.trim();
+  const email = $('cad-email').value.trim();
+  const senha = $('cad-senha').value;
+  const senha2 = $('cad-senha2').value;
+  if(!nome || !email || !senha){ showAl('al-cad','Preencha todos os campos'); return; }
+  if(senha.length < 6){ showAl('al-cad','A senha deve ter ao menos 6 caracteres'); return; }
+  if(senha !== senha2){ showAl('al-cad','As senhas não coincidem'); return; }
+  if(!state.ckTermos){ showAl('al-cad','Aceite os Termos de Uso para continuar'); return; }
+  setLoading('btn-cad','cad-spinner','cad-txt',true,'Criando conta...');
+  try{
+    const res = await gasPost('cadastro',{nome:`${nome} ${sobrenome}`.trim(),email,senha});
+    if(res.ok){
+      state.pendingEmail = email;
+      $('confirm-email-txt').textContent = email;
+      showConfirmScreen();
+    } else {
+      showAl('al-cad', res.msg || 'Erro ao criar conta');
+    }
+  } catch(e){
+    showAl('al-cad','Erro de conexão. Verifique o URL do Apps Script.');
+  }
+  setLoading('btn-cad','cad-spinner','cad-txt',false,'Criar Conta Grátis');
+}
+
+async function doRecuperar(){
+  hideAl('al-rec'); hideAl('al-rec-ok');
+  const email = $('rec-email').value.trim();
+  if(!email){ showAl('al-rec','Informe seu e-mail'); return; }
+  try{
+    const res = await gasCall('recuperarSenha',{email});
+    if(res.ok) showAl('al-rec-ok','',true);
+    else showAl('al-rec', res.msg || 'E-mail não encontrado');
+  } catch(e){
+    showAl('al-rec','Erro de conexão');
+  }
+}
+
+async function loginGoogle(){
+  showToast('Login com Google requer configuração OAuth no Apps Script. Veja o README.', 'inf');
+  // Para implementar: redirecionar para o endpoint OAuth do Apps Script
+  // window.location.href = GAS_URL + '?action=googleOAuth';
+}
+
+/* ═══════════════════════════════════════════════════════
+   EMAIL CONFIRMATION
+═══════════════════════════════════════════════════════ */
+function showConfirmScreen(){
+  $('auth-screen').style.display = 'none';
+  $('confirm-screen').style.display = 'flex';
+  $('ci0').focus();
+}
+function codeNext(i){
+  const val = $('ci'+i).value;
+  if(val && i < 5) $('ci'+(i+1)).focus();
+  if(i === 5) doConfirmCode();
+}
+function codePrev(e,i){
+  if(e.key==='Backspace' && !$('ci'+i).value && i>0) $('ci'+(i-1)).focus();
+}
+async function doConfirmCode(){
+  const code = [0,1,2,3,4,5].map(i=>$('ci'+i).value).join('');
+  if(code.length < 6){ showAl('al-confirm','Digite os 6 dígitos'); return; }
+  hideAl('al-confirm');
+  setLoading('btn-confirm','confirm-spinner','confirm-txt',true,'Verificando...');
+  // Note: btn-confirm doesn't exist directly, use inline button
+  try{
+    const res = await gasCall('confirmarEmail',{email:state.pendingEmail,code});
+    if(res.ok){
+      state.user = res.user;
+      saveLocalSession(res.user);
+      enterApp();
+    } else {
+      showAl('al-confirm', res.msg || 'Código inválido ou expirado');
+    }
+  } catch(e){
+    showAl('al-confirm','Erro de conexão');
+  }
+  setLoading('btn-confirm','confirm-spinner','confirm-txt',false,'Confirmar');
+}
+async function reenviarCodigo(){
+  const res = await gasCall('reenviarCodigo',{email:state.pendingEmail});
+  showToast(res.ok ? 'Código reenviado!' : 'Erro ao reenviar', res.ok ? 'ok' : 'er');
+}
+
+/* ═══════════════════════════════════════════════════════
+   SESSION
+═══════════════════════════════════════════════════════ */
+function saveLocalSession(user){
+  try{ sessionStorage.setItem('fa_user', JSON.stringify(user)); }catch(e){}
+}
+function loadLocalSession(){
+  try{
+    const s = sessionStorage.getItem('fa_user');
+    return s ? JSON.parse(s) : null;
+  }catch(e){ return null; }
+}
+function doLogout(){
+  state.user = null;
+  state.txs = [];
+  try{ sessionStorage.removeItem('fa_user'); }catch(e){}
+  clearInterval(state.adTimer);
+  $('app-screen').style.display = 'none';
+  $('confirm-screen').style.display = 'none';
+  $('auth-screen').style.display = 'flex';
+  authTab('login');
+}
+
+/* ═══════════════════════════════════════════════════════
+   APP ENTRY
+═══════════════════════════════════════════════════════ */
+function enterApp(){
+  $('auth-screen').style.display = 'none';
+  $('confirm-screen').style.display = 'none';
+  $('app-screen').style.display = 'block';
+  updateHdr();
+  buildDash();
+  buildTxPage();
+  buildRelPage();
+  buildAssinarPage();
+  buildConfigPage();
+  loadTransacoes();
+  startAdTimer();
+}
+
+function updateHdr(){
+  const u = state.user;
+  if(!u) return;
+  $('hdr-user').textContent = u.nome || u.email;
+  const trialBtn = $('btn-trial-hdr');
+  if(u.assinatura === 'vitalicio'){
+    trialBtn.style.display = 'none';
+  } else if(getDaysLeft() > 0){
+    trialBtn.style.display = 'inline-flex';
+    trialBtn.textContent = `⏱ ${getDaysLeft()}d restantes`;
+  } else {
+    trialBtn.style.display = 'inline-flex';
+    trialBtn.textContent = '⛔ Trial expirado';
+    trialBtn.className = 'hbtn';
+    trialBtn.style.background = 'rgba(248,113,113,.12)';
+    trialBtn.style.borderColor = 'rgba(248,113,113,.3)';
+    trialBtn.style.color = 'var(--red)';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════ */
+function goPage(name){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  $('pg-'+name)?.classList.add('on');
+  $('nav-'+name)?.classList.add('on');
+}
+
+/* ═══════════════════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════════════════ */
+function buildDash(){
+  const pg = $('pg-dash');
+  pg.innerHTML = `
+    <div class="ptitle">🏠 Dashboard <small id="dash-mes"></small></div>
+    ${isBlocked() ? `<div class="blocked-banner"><div class="blocked-banner-t">⛔ Seu período de teste encerrou</div><div class="blocked-banner-s">Visualização liberada, mas novos lançamentos estão bloqueados. <span style="color:var(--acc);cursor:pointer" onclick="goPage('assinar')">Assine agora →</span></div></div>` : getDaysLeft() > 0 && getDaysLeft() <= 3 ? `<div class="trial-banner" onclick="goPage('assinar')"><div class="trial-banner-txt"><div class="trial-banner-t">⏱ ${getDaysLeft()} dias restantes no trial</div><div class="trial-banner-s">Assine agora e garanta o acesso vitalício</div></div><div class="trial-banner-btn">Ver Oferta</div></div>` : ''}
+    <div class="dg" id="dash-widgets">
+      <div class="dw"><div class="dw-l">Saldo</div><div class="dw-v acc" id="dw-saldo">—</div><div class="dw-s">do mês</div></div>
+      <div class="dw"><div class="dw-l">Receitas</div><div class="dw-v ok" id="dw-rec">—</div></div>
+      <div class="dw"><div class="dw-l">Despesas</div><div class="dw-v err" id="dw-desp">—</div></div>
+      <div class="dw"><div class="dw-l">Investimentos</div><div class="dw-v" style="color:var(--acc2)" id="dw-inv">—</div></div>
+    </div>
+    <div class="card">
+      <div class="ch" onclick="this.nextElementSibling.classList.toggle('o');this.querySelector('.chv').classList.toggle('o')">
+        <div class="ci" style="background:rgba(34,211,238,.1)">📋</div>
+        <div class="cm"><div class="ct">Últimos Lançamentos</div><div class="cs" id="ult-count">—</div></div>
+        <div class="chv">▼</div>
+      </div>
+      <div class="cb o" id="dash-txs">
+        <div style="color:var(--t3);font-size:12px;padding:8px 0;text-align:center">Carregando...</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDashData(){
+  const mes = new Date().getMonth();
+  const ano = new Date().getFullYear();
+  const txsMes = state.txs.filter(t=>{
+    const d = new Date(t.data);
+    return d.getMonth()===mes && d.getFullYear()===ano;
+  });
+  const rec = txsMes.filter(t=>t.tipo==='receita').reduce((s,t)=>s+Number(t.valor||0),0);
+  const desp = txsMes.filter(t=>t.tipo==='despesa').reduce((s,t)=>s+Number(t.valor||0),0);
+  const inv = txsMes.filter(t=>t.tipo==='investimento').reduce((s,t)=>s+Number(t.valor||0),0);
+  const saldo = rec - desp - inv;
+  $('dw-saldo').textContent = fmtMoeda(saldo);
+  $('dw-rec').textContent = fmtMoeda(rec);
+  $('dw-desp').textContent = fmtMoeda(desp);
+  $('dw-inv').textContent = fmtMoeda(inv);
+  const mes_nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  $('dash-mes') && ($('dash-mes').textContent = mes_nomes[mes]+'/'+ano);
+  const ult = state.txs.slice(0,5);
+  $('ult-count').textContent = `${state.txs.length} lançamentos`;
+  $('dash-txs').innerHTML = ult.length ? ult.map(txHtml).join('') : '<div style="color:var(--t3);font-size:12px;padding:8px 0;text-align:center">Nenhum lançamento ainda</div>';
+}
+
+function txHtml(t){
+  const tipos = {receita:{ico:'📥',cls:'v-inc',sig:'+'},despesa:{ico:'📤',cls:'v-exp',sig:'-'},investimento:{ico:'📈',cls:'v-inv',sig:''}};
+  const tp = tipos[t.tipo] || {ico:'📦',cls:'',sig:''};
+  return `<div class="txi">
+    <div class="txi-i" style="background:rgba(255,255,255,.05)">${tp.ico}</div>
+    <div class="txi-m">
+      <div class="txi-d">${t.descricao||'—'}</div>
+      <div class="txi-s">${t.categoria||''}</div>
+    </div>
+    <div class="txi-a">
+      <div class="txi-v ${tp.cls}">${tp.sig}${fmtMoeda(t.valor)}</div>
+      <div class="txi-dt">${fmtData(t.data)}</div>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TX PAGE
+═══════════════════════════════════════════════════════ */
+function buildTxPage(){
+  $('pg-tx').innerHTML = `
+    <div class="ptitle">📋 Lançamentos</div>
+    ${isBlocked() ? `<div class="blocked-banner"><div class="blocked-banner-t">⛔ Novos lançamentos bloqueados</div><div class="blocked-banner-s">Assine para continuar cadastrando. <span style="color:var(--acc);cursor:pointer" onclick="goPage('assinar')">Assinar →</span></div></div>` : ''}
+    <div class="tabs">
+      <div class="tab on" onclick="filterTx('todos',this)">Todos</div>
+      <div class="tab" onclick="filterTx('receita',this)">Receitas</div>
+      <div class="tab" onclick="filterTx('despesa',this)">Despesas</div>
+      <div class="tab" onclick="filterTx('investimento',this)">Investimentos</div>
+    </div>
+    <div id="tx-list">
+      <div style="color:var(--t3);font-size:12px;padding:20px;text-align:center">Carregando lançamentos...</div>
+    </div>
+  `;
+}
+
+let txFilter = 'todos';
+function filterTx(f, el){
+  txFilter = f;
+  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  renderTxList();
+}
+function renderTxList(){
+  const list = txFilter === 'todos' ? state.txs : state.txs.filter(t=>t.tipo===txFilter);
+  const el = $('tx-list');
+  if(!el) return;
+  el.innerHTML = list.length
+    ? `<div class="card"><div style="padding:4px 8px">${list.map(txHtml).join('')}</div></div>`
+    : `<div style="color:var(--t3);font-size:12px;padding:20px;text-align:center">Nenhum lançamento encontrado</div>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RELATÓRIOS
+═══════════════════════════════════════════════════════ */
+function buildRelPage(){
+  $('pg-rel').innerHTML = `
+    <div class="ptitle">📊 Relatórios</div>
+    <div class="card">
+      <div style="padding:13px">
+        <div class="slabel">Resumo por categoria</div>
+        <div id="rel-cats"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="padding:13px">
+        <div class="slabel">Evolução mensal</div>
+        <div id="rel-mensal"></div>
+      </div>
+    </div>
+  `;
+}
+function renderRelatorios(){
+  const cats = {};
+  state.txs.filter(t=>t.tipo==='despesa').forEach(t=>{
+    const c = t.categoria || 'outros';
+    cats[c] = (cats[c]||0) + Number(t.valor||0);
+  });
+  const total = Object.values(cats).reduce((s,v)=>s+v,0) || 1;
+  const catIcos = {alimentacao:'🍔',transporte:'🚗',saude:'💊',lazer:'🎉',moradia:'🏠',educacao:'📚',salario:'💰',outros:'📦'};
+  const el = $('rel-cats');
+  if(!el) return;
+  el.innerHTML = Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`
+    <div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+        <span>${catIcos[cat]||'📦'} ${cat}</span>
+        <span>${fmtMoeda(val)}</span>
+      </div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${(val/total*100).toFixed(1)}%;background:var(--red)"></div></div>
+    </div>
+  `).join('') || '<div style="color:var(--t3);font-size:11px">Sem despesas lançadas</div>';
+
+  // Mensal
+  const mensais = {};
+  state.txs.forEach(t=>{
+    const d = new Date(t.data);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(!mensais[key]) mensais[key]={rec:0,desp:0};
+    if(t.tipo==='receita') mensais[key].rec+=Number(t.valor||0);
+    if(t.tipo==='despesa') mensais[key].desp+=Number(t.valor||0);
+  });
+  const el2 = $('rel-mensal');
+  if(!el2) return;
+  el2.innerHTML = Object.entries(mensais).sort().slice(-6).map(([mes,v])=>`
+    <div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;color:var(--t2)">
+        <span>${mes}</span>
+        <span style="color:var(--g)">+${fmtMoeda(v.rec)}</span>
+        <span style="color:var(--red)">-${fmtMoeda(v.desp)}</span>
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--t3);font-size:11px">Sem dados suficientes</div>';
+}
+
+/* ═══════════════════════════════════════════════════════
+   ASSINATURA
+═══════════════════════════════════════════════════════ */
+function buildAssinarPage(){
+  const isVit = state.user?.assinatura === 'vitalicio';
+  const isPendente = state.user?.assinatura === 'pendente';
+  $('pg-assinar').innerHTML = `
+    <div class="ptitle">⭐ Plano de Assinatura</div>
+    ${isVit ? `<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:var(--r2);padding:14px;margin-bottom:14px;text-align:center"><div style="font-size:28px;margin-bottom:8px">🎉</div><div style="font-weight:700;color:var(--g);font-size:14px">Você já é assinante vitalício!</div><div style="font-size:11px;color:var(--t2);margin-top:4px">Obrigado por apoiar o FinanceiroApp.</div></div>` : ''}
+    ${isPendente ? `<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:var(--r2);padding:14px;margin-bottom:14px"><div style="font-weight:700;color:var(--yel);margin-bottom:4px">⏳ Pagamento em análise</div><div style="font-size:11px;color:var(--t2);line-height:1.6">Recebemos seu PIX! Estamos confirmando o pagamento. Em até 24h seu acesso vitalício será ativado.</div></div>` : ''}
+    <div class="plan-card">
+      <div class="plan-badge">⭐ ACESSO VITALÍCIO</div>
+      <div class="plan-price">R$ 97<span> pagamento único</span></div>
+      <div style="font-size:11px;color:var(--t2)">Sem mensalidade. Paga uma vez, usa para sempre.</div>
+      <div class="plan-features">
+        <div class="plan-feat"><span class="ok">✅</span> Lançamentos ilimitados</div>
+        <div class="plan-feat"><span class="ok">✅</span> Relatórios completos</div>
+        <div class="plan-feat"><span class="ok">✅</span> Planilha Google sua propriedade</div>
+        <div class="plan-feat"><span class="ok">✅</span> Sem anúncios</div>
+        <div class="plan-feat"><span class="ok">✅</span> Suporte prioritário</div>
+        <div class="plan-feat"><span class="ok">✅</span> Atualizações futuras inclusas</div>
+      </div>
+    </div>
+
+    ${!isVit && !isPendente ? `
+    <div class="card" style="padding:0">
+      <div style="padding:14px">
+        <div class="slabel">Pagar via PIX</div>
+        <div class="pix-box">
+          <div style="font-size:11px;color:var(--t2);margin-bottom:6px">Chave PIX (e-mail):</div>
+          <div class="pix-key" id="pix-key-val">${PIX_KEY}</div>
+          <div style="font-size:12px;color:var(--text);font-weight:700;margin-bottom:8px">Valor: ${PIX_VALOR}</div>
+          <button class="btn btn-pix" onclick="copiarPix()">📋 Copiar Chave PIX</button>
+          <div class="pix-status">Após o pagamento, clique em "Já paguei" abaixo</div>
+        </div>
+        <button class="btn btn-ok" onclick="jaPaguei()">✅ Já paguei — ativar análise</button>
+        <div style="font-size:10px;color:var(--t3);margin-top:8px;line-height:1.6;text-align:center">
+          O pagamento é manual. Confirmação em até 24h via e-mail.<br>Dúvidas? Entre em contato pelo e-mail cadastrado.
+        </div>
+      </div>
+    </div>
+    ` : ''}
+    
+    <div class="card">
+      <div style="padding:13px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px">Por que assinar?</div>
+        <div style="font-size:11px;color:var(--t2);line-height:1.7">
+          O FinanceiroApp foi criado para facilitar seu controle financeiro direto no Google Sheets, sem complicação. Com o plano vitalício você garante acesso completo para sempre, com seus dados sempre na sua planilha pessoal no Google Drive.
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function copiarPix(){
+  try{
+    await navigator.clipboard.writeText(PIX_KEY);
+    showToast('Chave PIX copiada!');
+    // Registrar que copiou e colocar em avaliação
+    await gasCall('pixCopiado',{email:state.user.email});
+  } catch(e){
+    showToast('Copie manualmente: '+PIX_KEY,'inf');
+  }
+}
+async function jaPaguei(){
+  const res = await gasCall('pagamentoPendente',{email:state.user.email});
+  if(res.ok){
+    state.user.assinatura = 'pendente';
+    saveLocalSession(state.user);
+    showToast('Recebemos sua notificação! Confirmaremos em breve.');
+    buildAssinarPage();
+  } else {
+    showToast(res.msg||'Erro','er');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════════════ */
+function buildConfigPage(){
+  const u = state.user || {};
+  $('pg-config').innerHTML = `
+    <div class="ptitle">⚙️ Configurações</div>
+    <div class="card">
+      <div style="padding:13px">
+        <div class="slabel">Minha Conta</div>
+        <div style="font-size:13px;font-weight:600">${u.nome||'—'}</div>
+        <div style="font-size:11px;color:var(--t2);margin-top:2px">${u.email||'—'}</div>
+        <div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap">
+          <span class="badge ${u.assinatura==='vitalicio'?'b-ok':getDaysLeft()>0?'b-w':'b-e'}">${u.assinatura==='vitalicio'?'✅ Vitalício':getDaysLeft()>0?`⏱ Trial (${getDaysLeft()}d)`:'⛔ Expirado'}</span>
+          <span class="badge b-a">${u.planilhaId ? '📊 Planilha vinculada' : '⚠️ Sem planilha'}</span>
+        </div>
+      </div>
+    </div>
+    ${u.planilhaId ? `<div class="cfg-item" onclick="abrirPlanilha()">
+      <div class="cfg-icon">📊</div>
+      <div class="cfg-info"><div class="cfg-t">Minha Planilha</div><div class="cfg-s">Abrir no Google Sheets</div></div>
+      <div class="cfg-arr">→</div>
+    </div>` : ''}
+    <div class="cfg-item" onclick="goPage('assinar')">
+      <div class="cfg-icon">⭐</div>
+      <div class="cfg-info"><div class="cfg-t">Plano de Assinatura</div><div class="cfg-s">${u.assinatura==='vitalicio'?'Você é assinante vitalício':'Ver planos e assinar'}</div></div>
+      <div class="cfg-arr">→</div>
+    </div>
+    <div class="cfg-item" onclick="openTermos(null)">
+      <div class="cfg-icon">📄</div>
+      <div class="cfg-info"><div class="cfg-t">Termos de Uso</div><div class="cfg-s">Leia nossas políticas</div></div>
+      <div class="cfg-arr">→</div>
+    </div>
+    <div class="cfg-item" onclick="doLogout()">
+      <div class="cfg-icon">🚪</div>
+      <div class="cfg-info"><div class="cfg-t" style="color:var(--red)">Sair da Conta</div><div class="cfg-s">Encerrar sessão</div></div>
+      <div class="cfg-arr">→</div>
+    </div>
+    <div style="text-align:center;margin-top:20px;font-size:10px;color:var(--t3)">
+      ${APP_NAME} v2.0 — Todos os direitos reservados
+    </div>
+  `;
+}
+
+function abrirPlanilha(){
+  if(state.user?.planilhaId){
+    window.open(`https://docs.google.com/spreadsheets/d/${state.user.planilhaId}`, '_blank');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   TRANSACTIONS CRUD
+═══════════════════════════════════════════════════════ */
+function openAddTx(){
+  if(isBlocked()){
+    $('blocked-tx-msg').style.display = 'block';
+    $('tx-form-area').style.display = 'none';
+  } else {
+    $('blocked-tx-msg').style.display = 'none';
+    $('tx-form-area').style.display = 'block';
+  }
+  $('tx-data').value = todayISO();
+  $('ov-tx').classList.add('on');
+}
+
+async function saveTx(){
+  const desc = $('tx-desc').value.trim();
+  const val = parseFloat($('tx-val').value);
+  if(!desc){ showToast('Informe a descrição','er'); return; }
+  if(!val || val <= 0){ showToast('Informe um valor válido','er'); return; }
+  setLoading('btn-login','save-tx-spinner','save-tx-txt',true,'Salvando...');
+  const tx = {
+    tipo: $('tx-tipo').value,
+    descricao: desc,
+    valor: val,
+    data: $('tx-data').value,
+    categoria: $('tx-cat').value,
+    observacoes: $('tx-obs').value,
+    email: state.user.email,
+    planilhaId: state.user.planilhaId,
+  };
+  try{
+    const res = await gasPost('addTransacao', tx);
+    if(res.ok){
+      state.txs.unshift({...tx, id: res.id});
+      showToast('Lançamento salvo!');
+      closeOv('ov-tx');
+      renderDashData();
+      renderTxList();
+      renderRelatorios();
+      // Reset form
+      $('tx-desc').value=''; $('tx-val').value=''; $('tx-obs').value='';
+    } else {
+      showToast(res.msg||'Erro ao salvar','er');
+    }
+  } catch(e){
+    showToast('Erro de conexão','er');
+  }
+  setLoading('btn-login','save-tx-spinner','save-tx-txt',false,'Salvar Lançamento');
+}
+
+async function loadTransacoes(){
+  if(!state.user?.planilhaId) return;
+  try{
+    const res = await gasCall('getTransacoes',{email:state.user.email, planilhaId:state.user.planilhaId});
+    if(res.ok){
+      state.txs = res.transacoes || [];
+      renderDashData();
+      renderTxList();
+      renderRelatorios();
+    }
+  } catch(e){ /* silently fail */ }
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════════════ */
+function closeOv(id){
+  $(id)?.classList.remove('on');
+}
+function openTermos(e){
+  if(e) e.preventDefault();
+  $('ov-termos').classList.add('on');
+}
+function openPrivacidade(e){
+  if(e) e.preventDefault();
+  // Reutiliza o modal de termos com conteúdo de privacidade
+  openTermos(e);
+}
+
+/* ═══════════════════════════════════════════════════════
+   AD POPUP
+═══════════════════════════════════════════════════════ */
+function startAdTimer(){
+  if(state.user?.assinatura === 'vitalicio') return;
+  clearInterval(state.adTimer);
+  state.adTimer = setInterval(()=>{
+    if(!isBlocked()) showAd(); // mostra apenas para usuários trial
+  }, AD_INTERVAL_MIN * 60 * 1000);
+  // Mostrar depois de 3 min na primeira vez
+  setTimeout(()=>{
+    if(state.user && state.user.assinatura !== 'vitalicio') showAd();
+  }, 3 * 60 * 1000);
+}
+function showAd(){ $('ad-popup').classList.add('on'); }
+function closeAd(){ $('ad-popup').classList.remove('on'); }
+function closeAdAndGoAssinar(){ closeAd(); goPage('assinar'); }
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════ */
+(function init(){
+  // Tentar restaurar sessão
+  const saved = loadLocalSession();
+  if(saved && saved.email){
+    state.user = saved;
+    enterApp();
+  }
+  // Fechar modal ao clicar fora
+  document.querySelectorAll('.ov').forEach(ov=>{
+    ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('on'); });
+  });
+  // Data padrão no form
+  const txData = $('tx-data');
+  if(txData) txData.value = todayISO();
+})();
+</script>
+</body>
+</html>
