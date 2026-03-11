@@ -4266,141 +4266,6 @@ function gerarPDF(){
   win.document.close();
 }
 
-<!-- ═══════════════════════ POPUP: PAGAMENTO CONFIRMADO ═══════════════════════ -->
-<div id="pag-confirm-popup" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px">
-  <div style="background:var(--s1);border:1px solid rgba(52,211,153,.3);border-radius:16px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)">
-    <div style="font-size:52px;margin-bottom:12px">🎉</div>
-    <div style="font-family:'Instrument Serif',serif;font-size:22px;font-weight:700;color:var(--g);margin-bottom:8px">Acesso liberado!</div>
-    <p style="font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:20px">
-      Seu acesso vitalício foi ativado.<br>
-      Obrigado por assinar o <strong style="color:var(--text)">FinanceiroApp</strong>! 💎<br><br>
-      <span style="font-size:11px;color:var(--t3)">Caso identifiquemos alguma pendência no pagamento, entraremos em contato pelo seu e-mail.</span>
-    </p>
-    <button class="btn btn-p" style="width:100%;font-size:14px" onclick="document.getElementById('pag-confirm-popup').style.display='none';goPage('dash')">
-      🚀 Começar a usar
-    </button>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════ MODAL: TEMA ═══════════════════════ -->
-<div class="ov" id="ov-tema">
-  <div class="modal" style="max-height:92vh;overflow-y:auto">
-    <div class="mt">🎨 <span>Personalizar Tema</span><button class="mc" onclick="closeOv('ov-tema')">✕</button></div>
-
-    <!-- MODO CLARO/ESCURO -->
-    <div class="slabel">Modo</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-      <div id="modo-escuro" class="tema-modo-btn on" onclick="setModo('escuro')">
-        <div style="font-size:20px;margin-bottom:4px">🌙</div>
-        <div style="font-size:12px;font-weight:700">Escuro</div>
-        <div style="font-size:10px;color:var(--t2)">Noturno</div>
-      </div>
-      <div id="modo-claro" class="tema-modo-btn" onclick="setModo('claro')">
-        <div style="font-size:20px;margin-bottom:4px">☀️</div>
-        <div style="font-size:12px;font-weight:700">Claro</div>
-        <div style="font-size:10px;color:var(--t2)">Diurno</div>
-      </div>
-    </div>
-
-    <!-- COR DE DESTAQUE (ACCENT) -->
-    <div class="slabel">Cor Principal</div>
-    <div class="tema-cores" id="tema-accents" style="margin-bottom:14px">
-      <div class="tema-cor" data-col="#22d3ee" style="background:#22d3ee" onclick="setAccent('#22d3ee','#818cf8')" title="Ciano"></div>
-      <div class="tema-cor" data-col="#818cf8" style="background:#818cf8" onclick="setAccent('#818cf8','#22d3ee')" title="Índigo"></div>
-      <div class="tema-cor" data-col="#34d399" style="background:#34d399" onclick="setAccent('#34d399','#059669')" title="Verde"></div>
-      <div class="tema-cor" data-col="#f472b6" style="background:#f472b6" onclick="setAccent('#f472b6','#a78bfa')" title="Rosa"></div>
-      <div class="tema-cor" data-col="#fb923c" style="background:#fb923c" onclick="setAccent('#fb923c','#fbbf24')" title="Laranja"></div>
-      <div class="tema-cor" data-col="#a78bfa" style="background:#a78bfa" onclick="setAccent('#a78bfa','#f472b6')" title="Lilás"></div>
-      <div class="tema-cor" data-col="#fbbf24" style="background:#fbbf24" onclick="setAccent('#fbbf24','#f97316')" title="Amarelo"></div>
-      <div class="tema-cor" data-col="#60a5fa" style="background:#60a5fa" onclick="setAccent('#60a5fa','#818cf8')" title="Azul"></div>
-    </div>
-
-    <!-- FONTE -->
-    <div class="slabel">Fonte</div>
-    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px" id="tema-fontes">
-      <div class="tema-fonte-btn on" data-font="'Plus Jakarta Sans', sans-serif" onclick="setFonte(this)">
-        <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700">Plus Jakarta Sans</span>
-        <span style="font-size:10px;color:var(--t2)">Padrão</span>
-      </div>
-      <div class="tema-fonte-btn" data-font="'Inter', sans-serif" onclick="setFonte(this)">
-        <span style="font-family:'Inter',sans-serif;font-weight:700">Inter</span>
-        <span style="font-size:10px;color:var(--t2)">Moderna</span>
-      </div>
-      <div class="tema-fonte-btn" data-font="'Roboto', sans-serif" onclick="setFonte(this)">
-        <span style="font-family:'Roboto',sans-serif;font-weight:700">Roboto</span>
-        <span style="font-size:10px;color:var(--t2)">Google</span>
-      </div>
-      <div class="tema-fonte-btn" data-font="'DM Sans', sans-serif" onclick="setFonte(this)">
-        <span style="font-family:'DM Sans',sans-serif;font-weight:700">DM Sans</span>
-        <span style="font-size:10px;color:var(--t2)">Arredondada</span>
-      </div>
-      <div class="tema-fonte-btn" data-font="system-ui, sans-serif" onclick="setFonte(this)">
-        <span style="font-weight:700">Sistema</span>
-        <span style="font-size:10px;color:var(--t2)">Fonte do celular</span>
-      </div>
-    </div>
-
-    <!-- TAMANHO DA FONTE -->
-    <div class="slabel">Tamanho da Fonte</div>
-    <div style="display:flex;gap:8px;margin-bottom:14px" id="tema-sizes">
-      <div class="tema-size-btn" data-sz="12" onclick="setFontSize(12)">
-        <span style="font-size:11px">Aa</span><span style="font-size:9px;color:var(--t2)">Pequena</span>
-      </div>
-      <div class="tema-size-btn on" data-sz="14" onclick="setFontSize(14)">
-        <span style="font-size:14px">Aa</span><span style="font-size:9px;color:var(--t2)">Normal</span>
-      </div>
-      <div class="tema-size-btn" data-sz="16" onclick="setFontSize(16)">
-        <span style="font-size:16px">Aa</span><span style="font-size:9px;color:var(--t2)">Grande</span>
-      </div>
-      <div class="tema-size-btn" data-sz="18" onclick="setFontSize(18)">
-        <span style="font-size:18px">Aa</span><span style="font-size:9px;color:var(--t2)">XL</span>
-      </div>
-    </div>
-
-    <!-- BORDAS -->
-    <div class="slabel">Arredondamento</div>
-    <div style="display:flex;gap:8px;margin-bottom:18px" id="tema-radius">
-      <div class="tema-radius-btn" data-r="4" onclick="setRadius(4)">
-        <div style="width:26px;height:26px;background:var(--acc);border-radius:4px;margin:0 auto 4px"></div>
-        <span style="font-size:9px;color:var(--t2)">Quadrado</span>
-      </div>
-      <div class="tema-radius-btn on" data-r="14" onclick="setRadius(14)">
-        <div style="width:26px;height:26px;background:var(--acc);border-radius:14px;margin:0 auto 4px"></div>
-        <span style="font-size:9px;color:var(--t2)">Normal</span>
-      </div>
-      <div class="tema-radius-btn" data-r="20" onclick="setRadius(20)">
-        <div style="width:26px;height:26px;background:var(--acc);border-radius:20px;margin:0 auto 4px"></div>
-        <span style="font-size:9px;color:var(--t2)">Arredondado</span>
-      </div>
-    </div>
-
-    <!-- PREVIEW -->
-    <div class="slabel">Preview</div>
-    <div id="tema-preview" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:16px">
-      <div style="font-family:var(--font-body);font-size:var(--font-size)">
-        <div style="font-weight:800;color:var(--acc);margin-bottom:6px">FinanceiroApp</div>
-        <div style="font-size:calc(var(--font-size) - 2px);color:var(--t2);margin-bottom:8px">Mês atual · Saldo</div>
-        <div style="display:flex;gap:7px">
-          <span style="background:rgba(52,211,153,.15);color:var(--g);border-radius:var(--r3);padding:4px 9px;font-size:calc(var(--font-size) - 3px);font-weight:700">+ R$ 5.000</span>
-          <span style="background:rgba(248,113,113,.15);color:var(--red);border-radius:var(--r3);padding:4px 9px;font-size:calc(var(--font-size) - 3px);font-weight:700">- R$ 2.300</span>
-        </div>
-        <div style="margin-top:10px;height:6px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden">
-          <div style="height:100%;width:60%;background:var(--acc);border-radius:99px"></div>
-        </div>
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button class="btn btn-g" onclick="resetTema()">↺ Padrão</button>
-      <button class="btn btn-p" onclick="salvarTema()">
-        <span id="tema-save-spinner" style="display:none" class="spinner"></span>
-        <span id="tema-save-txt">💾 Salvar</span>
-      </button>
-    </div>
-  </div>
-</div>
-
 </body></html>`;
   const blob=new Blob([html],{type:'text/html;charset=utf-8'});const url=URL.createObjectURL(blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),60000);toast('📄 Relatório gerado!','inf');
 }
@@ -4788,6 +4653,22 @@ window.addEventListener('resize', ()=>{
 })();
 
 </script>
+
+<!-- ═══════════════════════ POPUP: PAGAMENTO CONFIRMADO ═══════════════════════ -->
+<div id="pag-confirm-popup" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--s1);border:1px solid rgba(52,211,153,.3);border-radius:16px;padding:28px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="font-size:52px;margin-bottom:12px">🎉</div>
+    <div style="font-family:'Instrument Serif',serif;font-size:22px;font-weight:700;color:var(--g);margin-bottom:8px">Acesso liberado!</div>
+    <p style="font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:20px">
+      Seu acesso vitalício foi ativado.<br>
+      Obrigado por assinar o <strong style="color:var(--text)">FinanceiroApp</strong>! 💎<br><br>
+      <span style="font-size:11px;color:var(--t3)">Caso identifiquemos alguma pendência no pagamento, entraremos em contato pelo seu e-mail.</span>
+    </p>
+    <button class="btn btn-p" style="width:100%;font-size:14px" onclick="document.getElementById('pag-confirm-popup').style.display='none';goPage('dash')">
+      🚀 Começar a usar
+    </button>
+  </div>
+</div>
 
 <!-- ═══════════════════════ MODAL: TEMA ═══════════════════════ -->
 <div class="ov" id="ov-tema">
