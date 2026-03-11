@@ -1419,13 +1419,16 @@ function isBlocked(){
    redirect:'follow' para seguir sem disparar preflight.
 ═══════════════════════════════════════════════════════ */
 async function gasCall(action, data={}){
-  // Flatten objetos aninhados e filtrar vazios
-  const flat = {};
-  for(const [k,v] of Object.entries({action,...data})){
-    if(v !== undefined && v !== null && v !== '') flat[k] = v;
+  // Monta query string manualmente com encodeURIComponent
+  // (URLSearchParams não garante encoding correto de JSON com chars especiais)
+  let qs = 'action=' + encodeURIComponent(action);
+  for(const [k,v] of Object.entries(data)){
+    if(v === undefined || v === null || v === '') continue;
+    // Se já é string (ex: JSON serializado), usa direto; se objeto, serializa
+    const str = typeof v === 'string' ? v : JSON.stringify(v);
+    qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(str);
   }
-  const params = new URLSearchParams(flat);
-  const r = await fetch(GAS_URL + '?' + params.toString(), {
+  const r = await fetch(GAS_URL + '?' + qs, {
     method: 'GET',
     redirect: 'follow',
   });
@@ -2051,33 +2054,75 @@ async function syncUserDataFromSheets(){
     const res = await gasCall('getUserData',{email:state.user.email, planilhaId:state.user.planilhaId});
     if(res.ok && res.data){
       const d = res.data;
-      if(d.bancos)     { bancos=d.bancos;     localStorage.setItem('fa_bancos',    JSON.stringify(bancos)); }
-      if(d.cartoes)    { cartoes=d.cartoes;   localStorage.setItem('fa_cartoes',   JSON.stringify(cartoes)); }
-      if(d.beneficios) { beneficios=d.beneficios; localStorage.setItem('fa_beneficios',JSON.stringify(beneficios)); }
-      if(d.caixinhas)  { caixinhas=d.caixinhas;   localStorage.setItem('fa_caixinhas', JSON.stringify(caixinhas)); }
-      if(d.cats)       { cats=d.cats;         localStorage.setItem('fa_cats',      JSON.stringify(cats)); }
-      if(d.txs)        { txs=d.txs;           localStorage.setItem('fa_txs',       JSON.stringify(txs)); }
-      if(d.previsoes)  { previsoes=d.previsoes;   localStorage.setItem('fa_prev',      JSON.stringify(previsoes)); }
+      let changed = false;
+      if(d.bancos     && Array.isArray(d.bancos))     { bancos=d.bancos;         localStorage.setItem('fa_bancos',    JSON.stringify(bancos));     changed=true; }
+      if(d.cartoes    && Array.isArray(d.cartoes))    { cartoes=d.cartoes;       localStorage.setItem('fa_cartoes',   JSON.stringify(cartoes));    changed=true; }
+      if(d.beneficios && Array.isArray(d.beneficios)) { beneficios=d.beneficios; localStorage.setItem('fa_beneficios',JSON.stringify(beneficios)); changed=true; }
+      if(d.caixinhas  && Array.isArray(d.caixinhas))  { caixinhas=d.caixinhas;   localStorage.setItem('fa_caixinhas', JSON.stringify(caixinhas));  changed=true; }
+      if(d.cats       && Array.isArray(d.cats))       { cats=d.cats;             localStorage.setItem('fa_cats',      JSON.stringify(cats));       changed=true; }
+      if(d.txs        && Array.isArray(d.txs))        { txs=d.txs;               localStorage.setItem('fa_txs',       JSON.stringify(txs));        changed=true; }
+      if(d.previsoes  && Array.isArray(d.previsoes))  { previsoes=d.previsoes;   localStorage.setItem('fa_prev',      JSON.stringify(previsoes));  changed=true; }
+      // Re-render se vieram dados do servidor (podem diferir do cache local)
+      if(changed && typeof renderPage === 'function') renderPage(typeof curPage!=='undefined' ? curPage : 'dash');
     }
-  } catch(e){ /* use local cache if offline */ }
+  } catch(e){ /* usa cache local se offline */ }
 }
 
-/* Sync write: after any DB.set, also push to Sheets asynchronously */
+/* Sync write: após qualquer DB.set, sincroniza com Sheets (debounced 2s) */
 async function syncWriteToSheets(){
   if(!state.user?.planilhaId) return;
+  showSyncIndicator('syncing');
   try{
-    gasCall('saveUserData',{
+    const res = await gasCall('saveUserData',{
       email:state.user.email,
       planilhaId:state.user.planilhaId,
-      bancos:JSON.stringify(bancos),
-      cartoes:JSON.stringify(cartoes),
+      bancos:    JSON.stringify(bancos),
+      cartoes:   JSON.stringify(cartoes),
       beneficios:JSON.stringify(beneficios),
-      caixinhas:JSON.stringify(caixinhas),
-      cats:JSON.stringify(cats),
-      txs:JSON.stringify(txs),
-      previsoes:JSON.stringify(previsoes),
+      caixinhas: JSON.stringify(caixinhas),
+      cats:      JSON.stringify(cats),
+      txs:       JSON.stringify(txs),
+      previsoes: JSON.stringify(previsoes),
     });
-  } catch(e){ /* silent — localStorage already updated */ }
+    showSyncIndicator(res.ok ? 'ok' : 'err');
+  } catch(e){
+    showSyncIndicator('err');
+  }
+}
+
+function showSyncIndicator(status){
+  let el = document.getElementById('sync-indicator');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'sync-indicator';
+    el.style.cssText = 'position:fixed;bottom:70px;right:12px;z-index:9999;font-size:10px;font-weight:700;padding:4px 9px;border-radius:99px;transition:all .3s;pointer-events:none;backdrop-filter:blur(8px)';
+    document.body.appendChild(el);
+  }
+  if(status==='syncing'){
+    el.textContent = '⏳ Salvando...';
+    el.style.background = 'rgba(251,191,36,.2)';
+    el.style.color = 'var(--yel)';
+    el.style.border = '1px solid rgba(251,191,36,.3)';
+    el.style.opacity = '1';
+  } else if(status==='ok'){
+    el.textContent = '☁️ Salvo';
+    el.style.background = 'rgba(52,211,153,.15)';
+    el.style.color = 'var(--g)';
+    el.style.border = '1px solid rgba(52,211,153,.25)';
+    el.style.opacity = '1';
+    setTimeout(()=>{ el.style.opacity='0'; }, 2500);
+  } else {
+    el.textContent = '⚠️ Offline';
+    el.style.background = 'rgba(248,113,113,.15)';
+    el.style.color = 'var(--red)';
+    el.style.border = '1px solid rgba(248,113,113,.25)';
+    el.style.opacity = '1';
+    setTimeout(()=>{ el.style.opacity='0'; }, 4000);
+  }
+  // No desktop, posiciona acima da barra do sistema
+  if(typeof isDesktop==='function' && isDesktop()){
+    el.style.bottom = '16px';
+  }
 }
 
 
