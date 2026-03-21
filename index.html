@@ -2364,7 +2364,7 @@ function saldoBanco(bid){
   const b=getBanco(bid);
   let s=parseFloat(b.saldoInicial)||0;
   txs.forEach(t=>{
-    if(t.tipo==='receita'&&t.destId===bid) s+=t.valor;
+    if(t.tipo==='receita'&&(t.destId===bid||t.bancoId===bid)) s+=t.valor;
     else if(t.tipo==='despesa'&&t.bancoId===bid) s-=t.valor;
     else if(t.tipo==='investimento'&&t.bancoId===bid) s-=t.valor;
     else if(t.tipo==='emprestimo'&&t.bancoId===bid){s+=(t.loanTipo==='tomado'?1:-1)*t.valor;}
