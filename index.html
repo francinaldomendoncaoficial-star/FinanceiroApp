@@ -3670,10 +3670,7 @@ function renderContasBody(){
         </div></div>`;
       }).join('')}
       <button class="btn btn-p" onclick="openAddBem()">＋ Novo Bem</button>`;
-  }
-}
-
-} else if(curContasTab==='investimentos'){
+  } else if(curContasTab==='investimentos'){
     // ── Helpers locais ──
     const totalAplicado = investimentos.reduce((s,inv)=>{
       const aplicado = inv.movs ? inv.movs.filter(m=>m.tipo==='aplicacao').reduce((a,m)=>a+m.valor,0) : (inv.valorInicial||0);
