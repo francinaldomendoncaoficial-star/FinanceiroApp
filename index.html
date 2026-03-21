@@ -1658,7 +1658,7 @@ async function doRedefinir(){
   if(senha !== senha2){ showAl('al-redef','As senhas não coincidem'); return; }
   setLoading('btn-redef','redef-spinner','redef-txt',true,'Redefinindo...');
   try{
-    const res = await gasCall('redefinirSenha',{email, codigo, senha});
+    const res = await gasCall('redefinirSenha',{email, code:codigo, novaSenha:senha});
     if(res.ok){
       showAl('al-redef-ok','',true);
       setTimeout(()=>{ authTab('login'); }, 2500);
