@@ -3431,22 +3431,12 @@ function renderContasBody(){
     const empTxs = txs.filter(t=>t.tipo==='emprestimo');
     const tomados   = empTxs.filter(t=>t.loanTipo==='tomado');
     const concedidos= empTxs.filter(t=>t.loanTipo==='concedido');
-
-    // Calcular saldo pendente de cada empréstimo (valor original - pagamentos/recebimentos relacionados)
-    function saldoEmp(empId){
-      const orig = txs.find(t=>t.id===empId);
-      if(!orig) return 0;
-      const pags = txs.filter(t=>t.empRefId===empId);
-      const pago = pags.reduce((s,t)=>s+t.valor,0);
-      return Math.max(0, orig.valor - pago);
-    }
-
-    function renderEmpGroup(lista, titulo, icoPag, btnLabel, tipoOp){
+    const _renderEmpGroup = (lista, titulo, icoPag, btnLabel, tipoOp) => {
       if(!lista.length) return `<div style="font-size:12px;color:var(--t2);padding:10px 0">Nenhum registro.</div>`;
       return lista.map(t=>{
         const d = new Date(t.data+'T12:00').toLocaleDateString('pt-BR');
         const banco = getBanco(t.bancoId);
-        const pend = saldoEmp(t.id);
+        const pend = saldoEmpById(t.id);
         const pago = t.valor - pend;
         const pct = t.valor>0 ? Math.min(100,pago/t.valor*100) : 100;
         const quitado = pend <= 0.01;
@@ -3487,11 +3477,11 @@ function renderContasBody(){
     el.innerHTML = `
       <div style="margin-bottom:16px">
         <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--bd)">🤝 Tomei Emprestado</div>
-        ${renderEmpGroup(tomados,'Tomados','🤝','💸 Pagar Parcela','pagar')}
+        ${_renderEmpGroup(tomados,'Tomados','🤝','💸 Pagar Parcela','pagar')}
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--bd)">💸 Emprestei</div>
-        ${renderEmpGroup(concedidos,'Concedidos','💸','✅ Registrar Recebimento','receber')}
+        ${_renderEmpGroup(concedidos,'Concedidos','💸','✅ Registrar Recebimento','receber')}
       </div>`;
 
   } else if(curContasTab==='patrimonio'){
