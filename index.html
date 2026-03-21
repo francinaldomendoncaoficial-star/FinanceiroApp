@@ -3732,7 +3732,8 @@ function renderInvestimentos(el){
       const corretoraTxt = inv.corretora?' · '+inv.corretora:'';
       const dataTxt = inv.dataInicio?' · Desde '+new Date(inv.dataInicio+'T12:00').toLocaleDateString('pt-BR'):'';
       const obsBem  = inv.obs?'<div style="font-size:10px;color:var(--t3);margin-top:2px">'+inv.obs+'</div>':'';
-      const histBlock = movs.length?('<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;cursor:pointer" onclick="togInline('movs-inv-'+inv.id+'')">🕐 Últimas movimentações ▼</div><div id="movs-inv-'+inv.id+'" style="display:none">'+movsHtml+'</div></div>'):'';
+      const histId = 'movs-inv-'+inv.id;
+      const histBlock = movs.length?('<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;cursor:pointer" onclick="togInline(&quot;'+histId+'&quot;)">🕐 Últimas movimentações ▼</div><div id="'+histId+'" style="display:none">'+movsHtml+'</div></div>'):'';
 
       html += '<div class="card" style="margin-bottom:10px"><div style="padding:13px">';
       html += '<div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:10px">';
