@@ -1165,6 +1165,70 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   </div>
 </div></div>
 
+<!-- MODAL NOVO INVESTIMENTO -->
+<div class="ov" id="ov-inv"><div class="modal" style="max-height:92vh;overflow-y:auto">
+  <div class="mt"><span>📈</span><span id="inv-tit">Novo Investimento</span><button class="mc" onclick="closeOv('ov-inv')">✕</button></div>
+  <div class="f"><label>Nome</label><input type="text" id="inv-nome" placeholder="Ex: CDB Nubank, Tesouro Selic, PETR4..."></div>
+  <div class="f2">
+    <div><label>Tipo</label>
+      <select id="inv-tipo">
+        <option value="renda_fixa">🏦 Renda Fixa (CDB, LCI, Tesouro)</option>
+        <option value="acoes">📊 Ações</option>
+        <option value="fii">🏢 FII (Fundo Imobiliário)</option>
+        <option value="fundo">📁 Fundo de Investimento</option>
+        <option value="cripto">₿ Criptomoedas</option>
+        <option value="poupanca">🐷 Poupança</option>
+        <option value="outro">📈 Outro</option>
+      </select>
+    </div>
+    <div><label>Data de início</label><input type="date" id="inv-data"></div>
+  </div>
+  <div class="f2">
+    <div><label>Corretora / Banco</label><input type="text" id="inv-corretora" placeholder="Ex: Nubank, XP, Rico..."></div>
+    <div><label>Valor inicial aplicado (R$)</label><input type="number" id="inv-val-inicial" placeholder="0,00" step="0.01"></div>
+  </div>
+  <div class="f"><label>Observação</label><input type="text" id="inv-obs" placeholder="Ex: Vence em dez/2026, rende 13% a.a."></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <button class="btn btn-g" onclick="closeOv('ov-inv')">Cancelar</button>
+    <button class="btn btn-p" onclick="salvarInv()">💾 Salvar</button>
+  </div>
+</div></div>
+
+<!-- MODAL MOVIMENTAÇÃO DE INVESTIMENTO -->
+<div class="ov" id="ov-movinv"><div class="modal">
+  <div class="mt"><span id="movinv-titulo">💰 Nova Aplicação</span><button class="mc" onclick="closeOv('ov-movinv')">✕</button></div>
+  <input type="hidden" id="movinv-id">
+  <input type="hidden" id="movinv-tipo">
+  <div style="font-size:12px;color:var(--acc);font-weight:600;margin-bottom:4px" id="movinv-nome"></div>
+  <div style="font-size:11px;color:var(--t2);margin-bottom:12px;padding:8px;background:var(--s1);border-radius:var(--r3)" id="movinv-help"></div>
+  <div class="f2">
+    <div><label>Valor (R$)</label><input type="number" id="movinv-val" placeholder="0,00" step="0.01"></div>
+    <div><label>Data</label><input type="date" id="movinv-data"></div>
+  </div>
+  <div class="f" id="movinv-banco-wrap"><label>Conta vinculada (opcional)</label><select id="movinv-banco"></select></div>
+  <div class="f"><label>Observação</label><input type="text" id="movinv-obs" placeholder="Ex: Rendimento de março..."></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <button class="btn btn-g" onclick="closeOv('ov-movinv')">Cancelar</button>
+    <button class="btn btn-p" onclick="salvarMovInv()">💾 Registrar</button>
+  </div>
+</div></div>
+
+<!-- MODAL ATUALIZAR VALOR INVESTIMENTO -->
+<div class="ov" id="ov-invval"><div class="modal">
+  <div class="mt"><span>✏️</span><span>Atualizar Valor Atual</span><button class="mc" onclick="closeOv('ov-invval')">✕</button></div>
+  <input type="hidden" id="invval-id">
+  <div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:4px" id="invval-nome"></div>
+  <div style="font-size:11px;color:var(--t2);margin-bottom:12px">Valor atual registrado: <strong id="invval-atual" style="color:var(--acc)"></strong></div>
+  <div style="font-size:11px;color:var(--t2);margin-bottom:12px;padding:8px;background:var(--s1);border-radius:var(--r3)">
+    ℹ️ Use isso para atualizar o valor de mercado do investimento. Ex: suas ações valiam R$1.000 e agora valem R$1.200.
+  </div>
+  <div class="f"><label>Novo valor atual (R$)</label><input type="number" id="invval-novo" placeholder="0,00" step="0.01"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <button class="btn btn-g" onclick="closeOv('ov-invval')">Cancelar</button>
+    <button class="btn btn-p" onclick="salvarAtualizarInv()">💾 Salvar</button>
+  </div>
+</div></div>
+
 <!-- ADD BANCO -->
 <div class="ov" id="ov-banco"><div class="modal">
   <div class="mt"><span>🏦</span><span id="banco-tit">Novo Banco</span><button class="mc" onclick="closeOv('ov-banco')">✕</button></div>
@@ -2220,6 +2284,7 @@ async function syncUserDataFromSheets(){
       if(d.txs        && Array.isArray(d.txs))        { txs=d.txs;               localStorage.setItem('fa_txs',       JSON.stringify(txs));        changed=true; }
       if(d.previsoes  && Array.isArray(d.previsoes))  { previsoes=d.previsoes;   localStorage.setItem('fa_prev',      JSON.stringify(previsoes));  changed=true; }
       if(d.bens       && Array.isArray(d.bens))       { bens=d.bens;             localStorage.setItem('fa_bens',      JSON.stringify(bens));       changed=true; }
+      if(d.investimentos && Array.isArray(d.investimentos)){ investimentos=d.investimentos; localStorage.setItem('fa_inv', JSON.stringify(investimentos)); changed=true; }
       // Re-render se vieram dados do servidor (podem diferir do cache local)
       if(changed && typeof renderPage === 'function') renderPage(typeof curPage!=='undefined' ? curPage : 'dash');
     }
@@ -2242,6 +2307,7 @@ async function syncWriteToSheets(){
       txs:       JSON.stringify(txs),
       previsoes: JSON.stringify(previsoes),
       bens:      JSON.stringify(bens),
+      investimentos: JSON.stringify(investimentos),
     });
     showSyncIndicator(res.ok ? 'ok' : 'err');
   } catch(e){
@@ -2316,6 +2382,7 @@ let cats       = DB.get('fa_cats', defaultCats());
 let txs        = DB.get('fa_txs',[]);
 let previsoes  = DB.get('fa_prev',[]);
 let bens       = DB.get('fa_bens',[]);
+let investimentos = DB.get('fa_inv',[]);
 let idC        = DB.get('fa_idc',1);
 function nid(){idC++;DB.set('fa_idc',idC);return 'x'+idC;}
 
@@ -3279,8 +3346,8 @@ function deletarPrev(id){
 // ═══════════════════════════════════
 function renderContas(){
   const el=document.getElementById('pg-contas');
-  const tabs=['bancos','cartoes','beneficios','caixinhas','emprestimos','patrimonio'];
-  const tabL=['🏦 Bancos','💳 Cartões','🎁 Benefícios','🎯 Caixinhas','🤝 Emprést.','🏠 Patrimônio'];
+  const tabs=['bancos','cartoes','beneficios','caixinhas','emprestimos','patrimonio','investimentos'];
+  const tabL=['🏦 Bancos','💳 Cartões','🎁 Benefícios','🎯 Caixinhas','🤝 Emprést.','🏠 Patrimônio','📈 Investimentos'];
   el.innerHTML=`<div class="ptitle">Contas & Cartões</div>
   <div class="tabs">${tabs.map((t,i)=>`<div class="tab contas-tab${curContasTab===t?' on':''}" data-tab="${t}" onclick="setCTab('${t}')">${tabL[i]}</div>`).join('')}</div>
   <div id="contas-body"></div>`;
@@ -3604,6 +3671,251 @@ function renderContasBody(){
       }).join('')}
       <button class="btn btn-p" onclick="openAddBem()">＋ Novo Bem</button>`;
   }
+}
+
+} else if(curContasTab==='investimentos'){
+    // ── Helpers locais ──
+    const totalAplicado = investimentos.reduce((s,inv)=>{
+      const aplicado = inv.movs ? inv.movs.filter(m=>m.tipo==='aplicacao').reduce((a,m)=>a+m.valor,0) : (inv.valorInicial||0);
+      const resgatado = inv.movs ? inv.movs.filter(m=>m.tipo==='resgate').reduce((a,m)=>a+m.valor,0) : 0;
+      return s + aplicado - resgatado;
+    },0);
+    const totalRendimento = investimentos.reduce((s,inv)=>{
+      return s + (inv.movs ? inv.movs.filter(m=>m.tipo==='rendimento'||m.tipo==='dividendo').reduce((a,m)=>a+m.valor,0) : 0);
+    },0);
+    const totalAtual = investimentos.reduce((s,inv)=>s+(inv.valorAtual||0),0);
+    const rentPct = totalAplicado>0 ? ((totalAtual+totalRendimento-totalAplicado)/totalAplicado*100) : 0;
+
+    const TIPO_INV = {renda_fixa:'🏦',acoes:'📊',fii:'🏢',fundo:'📁',cripto:'₿',poupanca:'🐷',outro:'📈'};
+    const TIPO_NOME = {renda_fixa:'Renda Fixa',acoes:'Ações',fii:'FII',fundo:'Fundo',cripto:'Cripto',poupanca:'Poupança',outro:'Outro'};
+
+    el.innerHTML = `
+      <!-- Resumo geral -->
+      <div style="background:linear-gradient(135deg,rgba(129,140,248,.12),rgba(34,211,238,.08));border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:14px">
+        <div style="font-size:10px;color:var(--t2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">📈 Resumo de Investimentos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+          <div style="text-align:center;background:rgba(255,255,255,.05);border-radius:var(--r3);padding:8px">
+            <div style="font-size:9px;color:var(--t2);margin-bottom:3px">Aplicado</div>
+            <div style="font-weight:800;font-size:12px;color:var(--acc)">${fmt(totalAplicado)}</div>
+          </div>
+          <div style="text-align:center;background:rgba(52,211,153,.08);border-radius:var(--r3);padding:8px">
+            <div style="font-size:9px;color:var(--t2);margin-bottom:3px">Rendimentos</div>
+            <div style="font-weight:800;font-size:12px;color:var(--g)">${fmt(totalRendimento)}</div>
+          </div>
+          <div style="text-align:center;background:rgba(129,140,248,.08);border-radius:var(--r3);padding:8px">
+            <div style="font-size:9px;color:var(--t2);margin-bottom:3px">Valor Atual</div>
+            <div style="font-weight:800;font-size:12px;color:#818cf8">${fmt(totalAtual)}</div>
+          </div>
+          <div style="text-align:center;background:${rentPct>=0?'rgba(52,211,153,.08)':'rgba(248,113,113,.08)'};border-radius:var(--r3);padding:8px">
+            <div style="font-size:9px;color:var(--t2);margin-bottom:3px">Rentabilidade</div>
+            <div style="font-weight:800;font-size:12px;color:${rentPct>=0?'var(--g)':'var(--red)'}">${rentPct>=0?'+':''}${rentPct.toFixed(1)}%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards de cada investimento -->
+      ${investimentos.length ? investimentos.map(inv=>{
+        const movs = inv.movs||[];
+        const aplicado  = movs.filter(m=>m.tipo==='aplicacao').reduce((s,m)=>s+m.valor,0) || (inv.valorInicial||0);
+        const resgatado = movs.filter(m=>m.tipo==='resgate').reduce((s,m)=>s+m.valor,0);
+        const rendimentos = movs.filter(m=>m.tipo==='rendimento'||m.tipo==='dividendo').reduce((s,m)=>s+m.valor,0);
+        const liquido = aplicado - resgatado;
+        const valorAt = inv.valorAtual || liquido;
+        const rent = liquido>0 ? ((valorAt+rendimentos-liquido)/liquido*100) : 0;
+        const ultimaMov = movs.length ? movs[movs.length-1] : null;
+        const movsHtml = movs.slice().reverse().slice(0,5).map(m=>{
+          const d = new Date(m.data+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+          const ico = m.tipo==='aplicacao'?'💰':m.tipo==='resgate'?'💵':m.tipo==='dividendo'?'🎁':'📈';
+          const cor = m.tipo==='aplicacao'?'var(--acc)':m.tipo==='resgate'?'var(--yel)':'var(--g)';
+          const sinal = m.tipo==='resgate'?'−':'+';
+          const label = {aplicacao:'Aplicação',resgate:'Resgate',rendimento:'Rendimento',dividendo:'Dividendo'}[m.tipo]||m.tipo;
+          return \`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(29,48,80,.2)">
+            <span style="font-size:14px">\${ico}</span>
+            <div style="flex:1">
+              <div style="font-size:11px;font-weight:600">\${label}\${m.obs?' — '+m.obs:''}</div>
+              <div style="font-size:10px;color:var(--t2)">\${d}\${m.banco?' · 🏦 '+m.banco:''}</div>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:\${cor}">\${sinal}\${fmt(m.valor)}</div>
+          </div>\`;
+        }).join('');
+        return \`<div class="card" style="margin-bottom:10px"><div style="padding:13px">
+          <div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:10px">
+            <div style="font-size:26px">\${TIPO_INV[inv.tipo]||'📈'}</div>
+            <div style="flex:1">
+              <div style="font-weight:800;font-size:14px">\${inv.nome}</div>
+              <div style="font-size:10px;color:var(--t2)">\${TIPO_NOME[inv.tipo]||'Investimento'}\${inv.corretora?' · \${inv.corretora}':''}\${inv.dataInicio?' · Desde '+new Date(inv.dataInicio+'T12:00').toLocaleDateString('pt-BR'):''}</div>
+              \${inv.obs?'<div style="font-size:10px;color:var(--t3);margin-top:2px">'+inv.obs+'</div>':''}
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:9px;color:var(--t2)">Valor atual</div>
+              <div style="font-size:16px;font-weight:800;color:#818cf8">\${fmt(valorAt)}</div>
+              <div style="font-size:10px;color:\${rent>=0?'var(--g)':'var(--red)'};">\${rent>=0?'▲':'▼'} \${Math.abs(rent).toFixed(1)}%</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+            <div style="background:rgba(129,140,248,.08);border-radius:var(--r3);padding:7px;text-align:center">
+              <div style="font-size:9px;color:var(--t2);margin-bottom:2px">💰 Aplicado</div>
+              <div style="font-size:11px;font-weight:700;color:var(--acc)">\${fmt(liquido)}</div>
+            </div>
+            <div style="background:rgba(52,211,153,.08);border-radius:var(--r3);padding:7px;text-align:center">
+              <div style="font-size:9px;color:var(--t2);margin-bottom:2px">📈 Rendeu</div>
+              <div style="font-size:11px;font-weight:700;color:var(--g)">\${fmt(rendimentos)}</div>
+            </div>
+            <div style="background:rgba(251,191,36,.08);border-radius:var(--r3);padding:7px;text-align:center">
+              <div style="font-size:9px;color:var(--t2);margin-bottom:2px">💵 Resgatado</div>
+              <div style="font-size:11px;font-weight:700;color:var(--yel)">\${fmt(resgatado)}</div>
+            </div>
+          </div>
+          \${movs.length?'<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;cursor:pointer" onclick="togInline('movs-inv-\${inv.id}')">🕐 Últimas movimentações ▼</div><div id="movs-inv-\${inv.id}" style="display:none">'+movsHtml+'</div></div>':''}
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn btn-ok btn-sm" onclick="openMovInv('\${inv.id}','aplicacao')">💰 Aplicar</button>
+            <button class="btn btn-g btn-sm" onclick="openMovInv('\${inv.id}','rendimento')">📈 Rendimento</button>
+            <button class="btn btn-g btn-sm" onclick="openMovInv('\${inv.id}','dividendo')">🎁 Dividendo</button>
+            <button class="btn btn-g btn-sm" onclick="openMovInv('\${inv.id}','resgate')">💵 Resgatar</button>
+            <button class="btn btn-g btn-sm" onclick="openAtualizarInv('\${inv.id}')">✏️ Valor atual</button>
+            <button class="btn btn-d btn-sm" onclick="delInv('\${inv.id}')">🗑</button>
+          </div>
+        </div></div>\`;
+      }).join('') : '<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">Nenhum investimento cadastrado ainda.<br><span style="font-size:11px">Adicione seu primeiro abaixo 👇</span></div>'}
+      <button class="btn btn-p" onclick="openAddInv()">＋ Novo Investimento</button>`;
+  }
+}
+
+// ─── HELPERS investimentos ───
+function openAddInv(){
+  sv('inv-eid','');sv('inv-tit','Novo Investimento');
+  ['inv-nome','inv-corretora','inv-obs','inv-val-inicial','inv-data'].forEach(id=>sv(id,''));
+  sv('inv-tipo','renda_fixa');
+  sv('inv-data', new Date().toISOString().slice(0,10));
+  openOv('ov-inv');
+}
+function editInv(id){
+  const inv = investimentos.find(x=>x.id===id); if(!inv) return;
+  sv('inv-eid', inv.id);
+  sv('inv-tit','Editar Investimento');
+  sv('inv-nome', inv.nome||'');
+  sv('inv-tipo', inv.tipo||'renda_fixa');
+  sv('inv-corretora', inv.corretora||'');
+  sv('inv-obs', inv.obs||'');
+  sv('inv-val-inicial', inv.valorInicial||'');
+  sv('inv-data', inv.dataInicio||'');
+  openOv('ov-inv');
+}
+function salvarInv(){
+  const nome = gs('inv-nome').trim();
+  if(!nome){ toast('Informe o nome!','er'); return; }
+  const eid = gs('inv-eid');
+  const valInicial = gv('inv-val-inicial');
+  const obj = {
+    nome,
+    tipo:        gs('inv-tipo'),
+    corretora:   gs('inv-corretora'),
+    obs:         gs('inv-obs'),
+    valorInicial: valInicial,
+    valorAtual:  valInicial,
+    dataInicio:  gs('inv-data'),
+  };
+  if(eid){
+    investimentos = investimentos.map(x=>x.id===eid ? {...x,...obj} : x);
+    toast('✓ Investimento atualizado!');
+  } else {
+    // Se tem valor inicial, cria uma movimentação de aplicação automática
+    const novoInv = {...obj, id:nid(), movs:[]};
+    if(valInicial>0){
+      novoInv.movs.push({id:nid(), tipo:'aplicacao', valor:valInicial, data:obj.dataInicio||new Date().toISOString().slice(0,10), obs:'Aplicação inicial'});
+    }
+    investimentos.push(novoInv);
+    toast('✓ Investimento cadastrado!');
+  }
+  DB.set('fa_inv', investimentos);
+  closeOv('ov-inv');
+  renderContasBody();
+}
+function delInv(id){
+  if(!confirm('Excluir este investimento e todo seu histórico?')) return;
+  investimentos = investimentos.filter(x=>x.id!==id);
+  DB.set('fa_inv', investimentos);
+  renderContasBody();
+}
+function openMovInv(id, tipoMov){
+  const inv = investimentos.find(x=>x.id===id); if(!inv) return;
+  sv('movinv-id', id);
+  sv('movinv-tipo', tipoMov);
+  const labels = {aplicacao:'💰 Nova Aplicação', rendimento:'📈 Registrar Rendimento', dividendo:'🎁 Registrar Dividendo', resgate:'💵 Resgatar'};
+  const helps  = {
+    aplicacao:'Dinheiro que você está colocando neste investimento.',
+    rendimento:'Juros ou lucro que o investimento gerou. Ex: CDB rendeu R$50 este mês.',
+    dividendo:'Pagamento recebido de ações ou FIIs. Cai na sua conta sem tirar do investimento.',
+    resgate:'Dinheiro que você está retirando do investimento.',
+  };
+  sv('movinv-titulo', labels[tipoMov]||tipoMov);
+  sv('movinv-help', helps[tipoMov]||'');
+  sv('movinv-nome', inv.nome);
+  sv('movinv-val','');
+  sv('movinv-obs','');
+  sv('movinv-data', new Date().toISOString().slice(0,10));
+  fillBancoSel('movinv-banco');
+  // mostrar/ocultar campo de banco conforme tipo
+  const showBanco = tipoMov==='aplicacao'||tipoMov==='resgate'||tipoMov==='dividendo';
+  document.getElementById('movinv-banco-wrap').style.display = showBanco ? 'block' : 'none';
+  openOv('ov-movinv');
+}
+function salvarMovInv(){
+  const id     = gs('movinv-id');
+  const tipo   = gs('movinv-tipo');
+  const val    = gv('movinv-val');
+  const data   = gs('movinv-data');
+  const obs    = gs('movinv-obs');
+  const bancoId= gs('movinv-banco');
+  if(!val||val<=0){ toast('Informe o valor!','er'); return; }
+  investimentos = investimentos.map(inv=>{
+    if(inv.id!==id) return inv;
+    const movs = inv.movs||[];
+    const banco = bancoId ? (bancos.find(b=>b.id===bancoId)?.nome||'') : '';
+    movs.push({id:nid(), tipo, valor:val, data, obs, banco, bancoId});
+    // Atualizar valorAtual automaticamente
+    let valorAt = inv.valorAtual||0;
+    if(tipo==='aplicacao')  valorAt += val;
+    if(tipo==='resgate')    valorAt = Math.max(0, valorAt - val);
+    // rendimento e dividendo não alteram valorAtual (já está embutido ou é separado)
+    return {...inv, movs, valorAtual: valorAt};
+  });
+  // Gerar lançamento no banco se vinculado
+  if(bancoId){
+    const inv = investimentos.find(x=>x.id===id);
+    if(tipo==='aplicacao'){
+      // saiu do banco
+      txs.push({id:nid(),tipo:'investimento',desc:`Aplicação — ${inv?.nome||''}`,valor:val,data,bancoId,catId:'',obs});
+      DB.set('fa_txs',txs);
+    } else if(tipo==='resgate'||tipo==='dividendo'){
+      // entrou no banco
+      txs.push({id:nid(),tipo:'receita',desc:`${tipo==='dividendo'?'Dividendo':'Resgate'} — ${inv?.nome||''}`,valor:val,data,bancoId,catId:'',obs});
+      DB.set('fa_txs',txs);
+    }
+  }
+  DB.set('fa_inv', investimentos);
+  closeOv('ov-movinv');
+  renderContasBody();
+  renderDash();
+  toast('✓ Movimentação registrada!');
+}
+function openAtualizarInv(id){
+  const inv = investimentos.find(x=>x.id===id); if(!inv) return;
+  sv('invval-id', id);
+  sv('invval-nome', inv.nome);
+  sv('invval-atual', fmt(inv.valorAtual||0));
+  sv('invval-novo','');
+  openOv('ov-invval');
+}
+function salvarAtualizarInv(){
+  const id  = gs('invval-id');
+  const novo = gv('invval-novo');
+  if(!novo||novo<=0){ toast('Informe o valor!','er'); return; }
+  investimentos = investimentos.map(x=>x.id===id ? {...x, valorAtual:novo} : x);
+  DB.set('fa_inv', investimentos);
+  closeOv('ov-invval');
+  renderContasBody();
+  toast('✓ Valor atualizado!');
 }
 
 // ─── HELPERS empréstimos ───
