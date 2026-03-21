@@ -2284,7 +2284,7 @@ async function syncUserDataFromSheets(){
       if(d.cartoes    && Array.isArray(d.cartoes))    { cartoes=d.cartoes;       localStorage.setItem('fa_cartoes',   JSON.stringify(cartoes));    changed=true; }
       if(d.beneficios && Array.isArray(d.beneficios)) { beneficios=d.beneficios; localStorage.setItem('fa_beneficios',JSON.stringify(beneficios)); changed=true; }
       if(d.caixinhas  && Array.isArray(d.caixinhas))  { caixinhas=d.caixinhas;   localStorage.setItem('fa_caixinhas', JSON.stringify(caixinhas));  changed=true; }
-      if(d.cats       && Array.isArray(d.cats))       { cats=d.cats;             localStorage.setItem('fa_cats',      JSON.stringify(cats));       changed=true; }
+      if(d.cats       && Array.isArray(d.cats))       { cats=d.cats.length?d.cats:defaultCats(); localStorage.setItem('fa_cats', JSON.stringify(cats)); changed=true; }
       if(d.txs        && Array.isArray(d.txs))        { txs=d.txs;               localStorage.setItem('fa_txs',       JSON.stringify(txs));        changed=true; }
       if(d.previsoes  && Array.isArray(d.previsoes))  { previsoes=d.previsoes;   localStorage.setItem('fa_prev',      JSON.stringify(previsoes));  changed=true; }
       if(d.bens       && Array.isArray(d.bens))       { bens=d.bens;             localStorage.setItem('fa_bens',      JSON.stringify(bens));       changed=true; }
@@ -2382,7 +2382,7 @@ let bancos     = DB.get('fa_bancos',[]);
 let cartoes    = DB.get('fa_cartoes',[]);
 let beneficios = DB.get('fa_beneficios',[]);
 let caixinhas  = DB.get('fa_caixinhas',[]);
-let cats       = DB.get('fa_cats', defaultCats());
+let cats       = (()=>{ const c=DB.get('fa_cats',null); return (c&&c.length)?c:defaultCats(); })();
 let txs        = DB.get('fa_txs',[]);
 let previsoes  = DB.get('fa_prev',[]);
 let bens       = DB.get('fa_bens',[]);
