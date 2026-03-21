@@ -3347,9 +3347,9 @@ function deletarPrev(id){
 function renderContas(){
   const el=document.getElementById('pg-contas');
   const tabs=['bancos','cartoes','beneficios','caixinhas','emprestimos','patrimonio','investimentos'];
-  const tabL=['🏦 Bancos','💳 Cartões','🎁 Benefícios','🎯 Caixinhas','🤝 Emprést.','🏠 Patrimônio','📈 Investimentos'];
+  const tabL=['🏦 Bancos','💳 Cartões','🎁 Benef.','🎯 Caixinhas','🤝 Empréstimos','🏠 Patrimônio','📈 Investimentos'];
   el.innerHTML=`<div class="ptitle">Contas & Cartões</div>
-  <div class="tabs">${tabs.map((t,i)=>`<div class="tab contas-tab${curContasTab===t?' on':''}" data-tab="${t}" onclick="setCTab('${t}')">${tabL[i]}</div>`).join('')}</div>
+  <div class="tabs" style="overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none">${tabs.map((t,i)=>`<div class="tab contas-tab${curContasTab===t?' on':''}" data-tab="${t}" onclick="setCTab('${t}')" style="flex-shrink:0;white-space:nowrap">${tabL[i]}</div>`).join('')}</div>
   <div id="contas-body"></div>`;
   renderContasBody();
 }
