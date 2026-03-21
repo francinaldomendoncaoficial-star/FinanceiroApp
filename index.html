@@ -3400,7 +3400,7 @@ function renderContasBody(){
         <button class="btn btn-d btn-sm" onclick="delBenef('${b.id}')">🗑</button>
       </div>
     </div></div>`;}).join('')+`<button class="btn btn-p" onclick="openAddBenef()">＋ Novo Benefício</button>`;
-  } else {
+  } else if(curContasTab==='caixinhas'){
     el.innerHTML=caixinhas.map(c=>{
       const s=saldoCx(c.id);const meta=c.meta||0;const pct=meta>0?Math.min(100,s/meta*100):0;
       const banco=bancos.find(b=>b.id===c.bancoId);
