@@ -3671,111 +3671,94 @@ function renderContasBody(){
       }).join('')}
       <button class="btn btn-p" onclick="openAddBem()">＋ Novo Bem</button>`;
   } else if(curContasTab==='investimentos'){
-    // ── Helpers locais ──
-    const totalAplicado = investimentos.reduce((s,inv)=>{
-      const aplicado = inv.movs ? inv.movs.filter(m=>m.tipo==='aplicacao').reduce((a,m)=>a+m.valor,0) : (inv.valorInicial||0);
-      const resgatado = inv.movs ? inv.movs.filter(m=>m.tipo==='resgate').reduce((a,m)=>a+m.valor,0) : 0;
-      return s + aplicado - resgatado;
-    },0);
-    const totalRendimento = investimentos.reduce((s,inv)=>{
-      return s + (inv.movs ? inv.movs.filter(m=>m.tipo==='rendimento'||m.tipo==='dividendo').reduce((a,m)=>a+m.valor,0) : 0);
-    },0);
-    const totalAtual = investimentos.reduce((s,inv)=>s+(inv.valorAtual||0),0);
-    const rentPct = totalAplicado>0 ? ((totalAtual+totalRendimento-totalAplicado)/totalAplicado*100) : 0;
-
-    const TIPO_INV = {renda_fixa:'🏦',acoes:'📊',fii:'🏢',fundo:'📁',cripto:'₿',poupanca:'🐷',outro:'📈'};
-    const TIPO_NOME = {renda_fixa:'Renda Fixa',acoes:'Ações',fii:'FII',fundo:'Fundo',cripto:'Cripto',poupanca:'Poupança',outro:'Outro'};
-
-    el.innerHTML = `
-      <!-- Resumo geral -->
-      <div style="background:linear-gradient(135deg,rgba(129,140,248,.12),rgba(34,211,238,.08));border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:14px">
-        <div style="font-size:10px;color:var(--t2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">📈 Resumo de Investimentos</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
-          <div style="text-align:center;background:rgba(255,255,255,.05);border-radius:var(--r3);padding:8px">
-            <div style="font-size:9px;color:var(--t2);margin-bottom:3px">Aplicado</div>
-            <div style="font-weight:800;font-size:12px;color:var(--acc)">${fmt(totalAplicado)}</div>
-          </div>
-          <div style="text-align:center;background:rgba(52,211,153,.08);border-radius:var(--r3);padding:8px">
-            <div style="font-size:9px;color:var(--t2);margin-bottom:3px">Rendimentos</div>
-            <div style="font-weight:800;font-size:12px;color:var(--g)">${fmt(totalRendimento)}</div>
-          </div>
-          <div style="text-align:center;background:rgba(129,140,248,.08);border-radius:var(--r3);padding:8px">
-            <div style="font-size:9px;color:var(--t2);margin-bottom:3px">Valor Atual</div>
-            <div style="font-weight:800;font-size:12px;color:#818cf8">${fmt(totalAtual)}</div>
-          </div>
-          <div style="text-align:center;background:${rentPct>=0?'rgba(52,211,153,.08)':'rgba(248,113,113,.08)'};border-radius:var(--r3);padding:8px">
-            <div style="font-size:9px;color:var(--t2);margin-bottom:3px">Rentabilidade</div>
-            <div style="font-weight:800;font-size:12px;color:${rentPct>=0?'var(--g)':'var(--red)'}">${rentPct>=0?'+':''}${rentPct.toFixed(1)}%</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Cards de cada investimento -->
-      ${investimentos.length ? investimentos.map(inv=>{
-        const movs = inv.movs||[];
-        const aplicado  = movs.filter(m=>m.tipo==='aplicacao').reduce((s,m)=>s+m.valor,0) || (inv.valorInicial||0);
-        const resgatado = movs.filter(m=>m.tipo==='resgate').reduce((s,m)=>s+m.valor,0);
-        const rendimentos = movs.filter(m=>m.tipo==='rendimento'||m.tipo==='dividendo').reduce((s,m)=>s+m.valor,0);
-        const liquido = aplicado - resgatado;
-        const valorAt = inv.valorAtual || liquido;
-        const rent = liquido>0 ? ((valorAt+rendimentos-liquido)/liquido*100) : 0;
-        const ultimaMov = movs.length ? movs[movs.length-1] : null;
-        const movsHtml = movs.slice().reverse().slice(0,5).map(m=>{
-          const d = new Date(m.data+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
-          const ico = m.tipo==='aplicacao'?'💰':m.tipo==='resgate'?'💵':m.tipo==='dividendo'?'🎁':'📈';
-          const cor = m.tipo==='aplicacao'?'var(--acc)':m.tipo==='resgate'?'var(--yel)':'var(--g)';
-          const sinal = m.tipo==='resgate'?'−':'+';
-          const label = {aplicacao:'Aplicação',resgate:'Resgate',rendimento:'Rendimento',dividendo:'Dividendo'}[m.tipo]||m.tipo;
-          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(29,48,80,.2)">
-            <span style="font-size:14px">${ico}</span>
-            <div style="flex:1">
-              <div style="font-size:11px;font-weight:600">${label}${m.obs?' — '+m.obs:''}</div>
-              <div style="font-size:10px;color:var(--t2)">${d}${m.banco?' · 🏦 '+m.banco:''}</div>
-            </div>
-            <div style="font-size:12px;font-weight:700;color:${cor}">${sinal}${fmt(m.valor)}</div>
-          </div>`;
-        }).join('');
-        return `<div class="card" style="margin-bottom:10px"><div style="padding:13px">
-          <div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:10px">
-            <div style="font-size:26px">${TIPO_INV[inv.tipo]||'📈'}</div>
-            <div style="flex:1">
-              <div style="font-weight:800;font-size:14px">${inv.nome}</div>
-              <div style="font-size:10px;color:var(--t2)">${TIPO_NOME[inv.tipo]||'Investimento'}${inv.corretora?' · ${inv.corretora}':''}${inv.dataInicio?' · Desde '+new Date(inv.dataInicio+'T12:00').toLocaleDateString('pt-BR'):''}</div>
-              ${inv.obs?'<div style="font-size:10px;color:var(--t3);margin-top:2px">'+inv.obs+'</div>':''}
-            </div>
-            <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:9px;color:var(--t2)">Valor atual</div>
-              <div style="font-size:16px;font-weight:800;color:#818cf8">${fmt(valorAt)}</div>
-              <div style="font-size:10px;color:${rent>=0?'var(--g)':'var(--red)'};">${rent>=0?'▲':'▼'} ${Math.abs(rent).toFixed(1)}%</div>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
-            <div style="background:rgba(129,140,248,.08);border-radius:var(--r3);padding:7px;text-align:center">
-              <div style="font-size:9px;color:var(--t2);margin-bottom:2px">💰 Aplicado</div>
-              <div style="font-size:11px;font-weight:700;color:var(--acc)">${fmt(liquido)}</div>
-            </div>
-            <div style="background:rgba(52,211,153,.08);border-radius:var(--r3);padding:7px;text-align:center">
-              <div style="font-size:9px;color:var(--t2);margin-bottom:2px">📈 Rendeu</div>
-              <div style="font-size:11px;font-weight:700;color:var(--g)">${fmt(rendimentos)}</div>
-            </div>
-            <div style="background:rgba(251,191,36,.08);border-radius:var(--r3);padding:7px;text-align:center">
-              <div style="font-size:9px;color:var(--t2);margin-bottom:2px">💵 Resgatado</div>
-              <div style="font-size:11px;font-weight:700;color:var(--yel)">${fmt(resgatado)}</div>
-            </div>
-          </div>
-          ${movs.length?'<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;cursor:pointer" onclick="togInline('movs-inv-${inv.id}')">🕐 Últimas movimentações ▼</div><div id="movs-inv-${inv.id}" style="display:none">'+movsHtml+'</div></div>':''}
-          <div style="display:flex;gap:7px;flex-wrap:wrap">
-            <button class="btn btn-ok btn-sm" onclick="openMovInv('${inv.id}','aplicacao')">💰 Aplicar</button>
-            <button class="btn btn-g btn-sm" onclick="openMovInv('${inv.id}','rendimento')">📈 Rendimento</button>
-            <button class="btn btn-g btn-sm" onclick="openMovInv('${inv.id}','dividendo')">🎁 Dividendo</button>
-            <button class="btn btn-g btn-sm" onclick="openMovInv('${inv.id}','resgate')">💵 Resgatar</button>
-            <button class="btn btn-g btn-sm" onclick="openAtualizarInv('${inv.id}')">✏️ Valor atual</button>
-            <button class="btn btn-d btn-sm" onclick="delInv('${inv.id}')">🗑</button>
-          </div>
-        </div></div>`;
-      }).join('') : '<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">Nenhum investimento cadastrado ainda.<br><span style="font-size:11px">Adicione seu primeiro abaixo 👇</span></div>'}
-      <button class="btn btn-p" onclick="openAddInv()">＋ Novo Investimento</button>`;
+    renderInvestimentos(el);
   }
+}
+
+// ─── RENDER INVESTIMENTOS ───
+function renderInvestimentos(el){
+  const TIPO_INV  = {renda_fixa:'🏦',acoes:'📊',fii:'🏢',fundo:'📁',cripto:'₿',poupanca:'🐷',outro:'📈'};
+  const TIPO_NOME = {renda_fixa:'Renda Fixa',acoes:'Ações',fii:'FII',fundo:'Fundo',cripto:'Cripto',poupanca:'Poupança',outro:'Outro'};
+  const TIPO_MOV  = {aplicacao:'Aplicação',resgate:'Resgate',rendimento:'Rendimento',dividendo:'Dividendo'};
+
+  const totalAplicado   = investimentos.reduce((s,inv)=>{ const m=inv.movs||[]; const ap=m.filter(x=>x.tipo==='aplicacao').reduce((a,x)=>a+x.valor,0)||(inv.valorInicial||0); const re=m.filter(x=>x.tipo==='resgate').reduce((a,x)=>a+x.valor,0); return s+ap-re; },0);
+  const totalRendimento = investimentos.reduce((s,inv)=>{ const m=inv.movs||[]; return s+m.filter(x=>x.tipo==='rendimento'||x.tipo==='dividendo').reduce((a,x)=>a+x.valor,0); },0);
+  const totalAtual      = investimentos.reduce((s,inv)=>s+(inv.valorAtual||0),0);
+  const rentPct         = totalAplicado>0?((totalAtual+totalRendimento-totalAplicado)/totalAplicado*100):0;
+
+  // Resumo
+  let html = '<div style="background:linear-gradient(135deg,rgba(129,140,248,.12),rgba(34,211,238,.08));border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:14px">';
+  html += '<div style="font-size:10px;color:var(--t2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">📈 Resumo de Investimentos</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">';
+  html += '<div style="text-align:center;background:rgba(255,255,255,.05);border-radius:var(--r3);padding:8px"><div style="font-size:9px;color:var(--t2);margin-bottom:3px">Aplicado</div><div style="font-weight:800;font-size:12px;color:var(--acc)">'+fmt(totalAplicado)+'</div></div>';
+  html += '<div style="text-align:center;background:rgba(52,211,153,.08);border-radius:var(--r3);padding:8px"><div style="font-size:9px;color:var(--t2);margin-bottom:3px">Rendimentos</div><div style="font-weight:800;font-size:12px;color:var(--g)">'+fmt(totalRendimento)+'</div></div>';
+  html += '<div style="text-align:center;background:rgba(129,140,248,.08);border-radius:var(--r3);padding:8px"><div style="font-size:9px;color:var(--t2);margin-bottom:3px">Valor Atual</div><div style="font-weight:800;font-size:12px;color:#818cf8">'+fmt(totalAtual)+'</div></div>';
+  html += '<div style="text-align:center;background:rgba('+(rentPct>=0?'52,211,153':'248,113,113')+',.08);border-radius:var(--r3);padding:8px"><div style="font-size:9px;color:var(--t2);margin-bottom:3px">Rentabilidade</div><div style="font-weight:800;font-size:12px;color:'+(rentPct>=0?'var(--g)':'var(--red)')+';">'+(rentPct>=0?'+':'')+rentPct.toFixed(1)+'%</div></div>';
+  html += '</div></div>';
+
+  // Cards
+  if(!investimentos.length){
+    html += '<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">Nenhum investimento cadastrado ainda.<br><span style="font-size:11px">Adicione seu primeiro abaixo 👇</span></div>';
+  } else {
+    investimentos.forEach(function(inv){
+      const movs      = inv.movs||[];
+      const aplicado  = movs.filter(function(m){return m.tipo==='aplicacao';}).reduce(function(s,m){return s+m.valor;},0)||(inv.valorInicial||0);
+      const resgatado = movs.filter(function(m){return m.tipo==='resgate';}).reduce(function(s,m){return s+m.valor;},0);
+      const rendidos  = movs.filter(function(m){return m.tipo==='rendimento'||m.tipo==='dividendo';}).reduce(function(s,m){return s+m.valor;},0);
+      const liquido   = aplicado - resgatado;
+      const valorAt   = inv.valorAtual||liquido;
+      const rent      = liquido>0?((valorAt+rendidos-liquido)/liquido*100):0;
+      const rentCor   = rent>=0?'var(--g)':'var(--red)';
+      const tipoNome  = TIPO_NOME[inv.tipo]||'Investimento';
+      const tipoIco   = TIPO_INV[inv.tipo]||'📈';
+
+      // Movimentações recentes
+      let movsHtml = '';
+      movs.slice().reverse().slice(0,5).forEach(function(m){
+        const d     = new Date(m.data+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+        const mIco  = m.tipo==='aplicacao'?'💰':m.tipo==='resgate'?'💵':m.tipo==='dividendo'?'🎁':'📈';
+        const mCor  = m.tipo==='aplicacao'?'var(--acc)':m.tipo==='resgate'?'var(--yel)':'var(--g)';
+        const sinal = m.tipo==='resgate'?'−':'+';
+        const lbl   = TIPO_MOV[m.tipo]||m.tipo;
+        const bancoTxt = m.banco?' · 🏦 '+m.banco:'';
+        const obsTxt   = m.obs?' — '+m.obs:'';
+        movsHtml += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(29,48,80,.2)">';
+        movsHtml += '<span style="font-size:14px">'+mIco+'</span>';
+        movsHtml += '<div style="flex:1"><div style="font-size:11px;font-weight:600">'+lbl+obsTxt+'</div>';
+        movsHtml += '<div style="font-size:10px;color:var(--t2)">'+d+bancoTxt+'</div></div>';
+        movsHtml += '<div style="font-size:12px;font-weight:700;color:'+mCor+'">'+sinal+fmt(m.valor)+'</div></div>';
+      });
+
+      const corretoraTxt = inv.corretora?' · '+inv.corretora:'';
+      const dataTxt = inv.dataInicio?' · Desde '+new Date(inv.dataInicio+'T12:00').toLocaleDateString('pt-BR'):'';
+      const obsBem  = inv.obs?'<div style="font-size:10px;color:var(--t3);margin-top:2px">'+inv.obs+'</div>':'';
+      const histBlock = movs.length?('<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;cursor:pointer" onclick="togInline('movs-inv-'+inv.id+'')">🕐 Últimas movimentações ▼</div><div id="movs-inv-'+inv.id+'" style="display:none">'+movsHtml+'</div></div>'):'';
+
+      html += '<div class="card" style="margin-bottom:10px"><div style="padding:13px">';
+      html += '<div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:10px">';
+      html += '<div style="font-size:26px">'+tipoIco+'</div>';
+      html += '<div style="flex:1"><div style="font-weight:800;font-size:14px">'+inv.nome+'</div>';
+      html += '<div style="font-size:10px;color:var(--t2)">'+tipoNome+corretoraTxt+dataTxt+'</div>'+obsBem+'</div>';
+      html += '<div style="text-align:right;flex-shrink:0"><div style="font-size:9px;color:var(--t2)">Valor atual</div>';
+      html += '<div style="font-size:16px;font-weight:800;color:#818cf8">'+fmt(valorAt)+'</div>';
+      html += '<div style="font-size:10px;color:'+rentCor+';">'+(rent>=0?'▲':'▼')+' '+Math.abs(rent).toFixed(1)+'%</div></div></div>';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">';
+      html += '<div style="background:rgba(129,140,248,.08);border-radius:var(--r3);padding:7px;text-align:center"><div style="font-size:9px;color:var(--t2);margin-bottom:2px">💰 Aplicado</div><div style="font-size:11px;font-weight:700;color:var(--acc)">'+fmt(liquido)+'</div></div>';
+      html += '<div style="background:rgba(52,211,153,.08);border-radius:var(--r3);padding:7px;text-align:center"><div style="font-size:9px;color:var(--t2);margin-bottom:2px">📈 Rendeu</div><div style="font-size:11px;font-weight:700;color:var(--g)">'+fmt(rendidos)+'</div></div>';
+      html += '<div style="background:rgba(251,191,36,.08);border-radius:var(--r3);padding:7px;text-align:center"><div style="font-size:9px;color:var(--t2);margin-bottom:2px">💵 Resgatado</div><div style="font-size:11px;font-weight:700;color:var(--yel)">'+fmt(resgatado)+'</div></div></div>';
+      html += histBlock;
+      html += '<div style="display:flex;gap:7px;flex-wrap:wrap">';
+      html += '<button class="btn btn-ok btn-sm" onclick="openMovInv(''+inv.id+'','aplicacao')">💰 Aplicar</button>';
+      html += '<button class="btn btn-g btn-sm" onclick="openMovInv(''+inv.id+'','rendimento')">📈 Rendimento</button>';
+      html += '<button class="btn btn-g btn-sm" onclick="openMovInv(''+inv.id+'','dividendo')">🎁 Dividendo</button>';
+      html += '<button class="btn btn-g btn-sm" onclick="openMovInv(''+inv.id+'','resgate')">💵 Resgatar</button>';
+      html += '<button class="btn btn-g btn-sm" onclick="openAtualizarInv(''+inv.id+'')">✏️ Valor atual</button>';
+      html += '<button class="btn btn-d btn-sm" onclick="delInv(''+inv.id+'')">🗑</button></div>';
+      html += '</div></div>';
+    });
+  }
+  html += '<button class="btn btn-p" onclick="openAddInv()">＋ Novo Investimento</button>';
+  el.innerHTML = html;
 }
 
 // ─── HELPERS investimentos ───
