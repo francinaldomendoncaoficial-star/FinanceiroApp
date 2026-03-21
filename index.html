@@ -1091,6 +1091,67 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 <!-- DETALHE TX -->
 <div class="ov" id="ov-tx-det"><div class="modal" id="m-tx-det"></div></div>
 
+<!-- MODAL PAGAR/RECEBER EMPRÉSTIMO -->
+<div class="ov" id="ov-pgemp"><div class="modal">
+  <div class="mt"><span id="pgemp-titulo">💸 Pagar Parcela</span><button class="mc" onclick="closeOv('ov-pgemp')">✕</button></div>
+  <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Empréstimo: <strong id="pgemp-nome"></strong> · Pendente: <strong id="pgemp-pendente" style="color:var(--red)"></strong></div>
+  <input type="hidden" id="pgemp-id">
+  <input type="hidden" id="pgemp-tipo">
+  <div class="f2">
+    <div><label>Valor</label><input type="number" id="pgemp-val" placeholder="0,00" step="0.01"></div>
+    <div><label>Data</label><input type="date" id="pgemp-data"></div>
+  </div>
+  <div class="f"><label>Conta de débito/crédito</label><select id="pgemp-banco"></select></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <button class="btn btn-g" onclick="closeOv('ov-pgemp')">Cancelar</button>
+    <button class="btn btn-p" onclick="salvarPagEmp()">💾 Registrar</button>
+  </div>
+</div></div>
+
+<!-- MODAL NOVO/EDITAR BEM -->
+<div class="ov" id="ov-bem"><div class="modal" style="max-height:92vh;overflow-y:auto">
+  <div class="mt"><span>🏠</span><span id="bem-tit">Novo Bem</span><button class="mc" onclick="closeOv('ov-bem')">✕</button></div>
+  <div class="f"><label>Nome do Bem</label><input type="text" id="bem-nome" placeholder="Ex: Apartamento, Carro, Notebook..."></div>
+  <div class="f2">
+    <div><label>Tipo</label>
+      <select id="bem-tipo">
+        <option value="imovel">🏠 Imóvel</option>
+        <option value="veiculo">🚗 Veículo</option>
+        <option value="investimento">📈 Investimento</option>
+        <option value="equipamento">🖥️ Equipamento</option>
+        <option value="outro">📦 Outro</option>
+      </select>
+    </div>
+    <div><label>Data de aquisição</label><input type="date" id="bem-data-aq"></div>
+  </div>
+  <div class="f2">
+    <div><label>Valor de aquisição (R$)</label><input type="number" id="bem-val-aq" placeholder="0,00" step="0.01"></div>
+    <div><label>Valor atual (R$)</label><input type="number" id="bem-val-at" placeholder="Igual aquisição se vazio" step="0.01"></div>
+  </div>
+  <div class="f"><label>Descrição / Observação</label><input type="text" id="bem-desc" placeholder="Ex: Apartamento 2 quartos, Rua X..."></div>
+  <div class="f"><label>Vincular a empréstimo/financiamento</label><select id="bem-emp-ref"></select></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <button class="btn btn-g" onclick="closeOv('ov-bem')">Cancelar</button>
+    <button class="btn btn-p" onclick="salvarBem()">💾 Salvar</button>
+  </div>
+</div></div>
+
+<!-- MODAL ATUALIZAR VALOR DO BEM -->
+<div class="ov" id="ov-bemval"><div class="modal">
+  <div class="mt"><span>📈</span><span>Atualizar Valor</span><button class="mc" onclick="closeOv('ov-bemval')">✕</button></div>
+  <input type="hidden" id="bemval-id">
+  <div style="font-size:12px;color:var(--t2);margin-bottom:10px">Bem: <strong id="bemval-nome"></strong></div>
+  <div style="font-size:11px;color:var(--t2);margin-bottom:12px">Valor atual: <strong id="bemval-atual" style="color:var(--acc)"></strong></div>
+  <div class="f2">
+    <div><label>Novo valor (R$)</label><input type="number" id="bemval-novo" placeholder="0,00" step="0.01"></div>
+    <div><label>Data da avaliação</label><input type="date" id="bemval-data"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <button class="btn btn-g" onclick="closeOv('ov-bemval')">Cancelar</button>
+    <button class="btn btn-p" onclick="salvarAtualizarBem()">💾 Salvar</button>
+  </div>
+</div></div>
+
 <!-- ADD BANCO -->
 <div class="ov" id="ov-banco"><div class="modal">
   <div class="mt"><span>🏦</span><span id="banco-tit">Novo Banco</span><button class="mc" onclick="closeOv('ov-banco')">✕</button></div>
@@ -2103,6 +2164,7 @@ async function syncUserDataFromSheets(){
       if(d.cats       && Array.isArray(d.cats))       { cats=d.cats;             localStorage.setItem('fa_cats',      JSON.stringify(cats));       changed=true; }
       if(d.txs        && Array.isArray(d.txs))        { txs=d.txs;               localStorage.setItem('fa_txs',       JSON.stringify(txs));        changed=true; }
       if(d.previsoes  && Array.isArray(d.previsoes))  { previsoes=d.previsoes;   localStorage.setItem('fa_prev',      JSON.stringify(previsoes));  changed=true; }
+      if(d.bens       && Array.isArray(d.bens))       { bens=d.bens;             localStorage.setItem('fa_bens',      JSON.stringify(bens));       changed=true; }
       // Re-render se vieram dados do servidor (podem diferir do cache local)
       if(changed && typeof renderPage === 'function') renderPage(typeof curPage!=='undefined' ? curPage : 'dash');
     }
@@ -2124,6 +2186,7 @@ async function syncWriteToSheets(){
       cats:      JSON.stringify(cats),
       txs:       JSON.stringify(txs),
       previsoes: JSON.stringify(previsoes),
+      bens:      JSON.stringify(bens),
     });
     showSyncIndicator(res.ok ? 'ok' : 'err');
   } catch(e){
@@ -2197,6 +2260,7 @@ let caixinhas  = DB.get('fa_caixinhas',[]);
 let cats       = DB.get('fa_cats', defaultCats());
 let txs        = DB.get('fa_txs',[]);
 let previsoes  = DB.get('fa_prev',[]);
+let bens       = DB.get('fa_bens',[]);
 let idC        = DB.get('fa_idc',1);
 function nid(){idC++;DB.set('fa_idc',idC);return 'x'+idC;}
 
@@ -3160,8 +3224,8 @@ function deletarPrev(id){
 // ═══════════════════════════════════
 function renderContas(){
   const el=document.getElementById('pg-contas');
-  const tabs=['bancos','cartoes','beneficios','caixinhas'];
-  const tabL=['🏦 Bancos','💳 Cartões','🎁 Benefícios','🎯 Caixinhas'];
+  const tabs=['bancos','cartoes','beneficios','caixinhas','emprestimos','patrimonio'];
+  const tabL=['🏦 Bancos','💳 Cartões','🎁 Benefícios','🎯 Caixinhas','🤝 Emprést.','🏠 Patrimônio'];
   el.innerHTML=`<div class="ptitle">Contas & Cartões</div>
   <div class="tabs">${tabs.map((t,i)=>`<div class="tab contas-tab${curContasTab===t?' on':''}" data-tab="${t}" onclick="setCTab('${t}')">${tabL[i]}</div>`).join('')}</div>
   <div id="contas-body"></div>`;
@@ -3362,7 +3426,277 @@ function renderContasBody(){
         </div>
       </div>`;
     }).join('')+`<button class="btn btn-p" onclick="openAddCx()">＋ Nova Caixinha / Meta</button>`;
+  } else if(curContasTab==='emprestimos'){
+    // ── Separar empréstimos tomados e concedidos ──
+    const empTxs = txs.filter(t=>t.tipo==='emprestimo');
+    const tomados   = empTxs.filter(t=>t.loanTipo==='tomado');
+    const concedidos= empTxs.filter(t=>t.loanTipo==='concedido');
+
+    // Calcular saldo pendente de cada empréstimo (valor original - pagamentos/recebimentos relacionados)
+    function saldoEmp(empId){
+      const orig = txs.find(t=>t.id===empId);
+      if(!orig) return 0;
+      const pags = txs.filter(t=>t.empRefId===empId);
+      const pago = pags.reduce((s,t)=>s+t.valor,0);
+      return Math.max(0, orig.valor - pago);
+    }
+
+    function renderEmpGroup(lista, titulo, icoPag, btnLabel, tipoOp){
+      if(!lista.length) return `<div style="font-size:12px;color:var(--t2);padding:10px 0">Nenhum registro.</div>`;
+      return lista.map(t=>{
+        const d = new Date(t.data+'T12:00').toLocaleDateString('pt-BR');
+        const banco = getBanco(t.bancoId);
+        const pend = saldoEmp(t.id);
+        const pago = t.valor - pend;
+        const pct = t.valor>0 ? Math.min(100,pago/t.valor*100) : 100;
+        const quitado = pend <= 0.01;
+        return `<div class="card" style="margin-bottom:10px"><div style="padding:13px">
+          <div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:10px">
+            <div style="font-size:22px">${icoPag}</div>
+            <div style="flex:1">
+              <div style="font-weight:800;font-size:14px">${t.desc}</div>
+              <div style="font-size:10px;color:var(--t2)">📅 ${d}${banco?' · 🏦 '+banco.nome:''}${t.parcelas&&t.parcelas>1?' · '+t.parcelas+'x':''}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:10px;color:var(--t2)">Total</div>
+              <div style="font-size:15px;font-weight:800">${fmt(t.valor)}</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+            <div style="background:rgba(52,211,153,.1);border-radius:var(--r3);padding:8px;text-align:center">
+              <div style="font-size:9px;color:var(--t2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px">${tipoOp==='pagar'?'Pago':'Recebido'}</div>
+              <div style="font-size:13px;font-weight:700;color:var(--g)">${fmt(pago)}</div>
+            </div>
+            <div style="background:rgba(248,113,113,.1);border-radius:var(--r3);padding:8px;text-align:center">
+              <div style="font-size:9px;color:var(--t2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px">Pendente</div>
+              <div style="font-size:13px;font-weight:700;color:${quitado?'var(--g)':'var(--red)'}">${quitado?'Quitado':fmt(pend)}</div>
+            </div>
+          </div>
+          <div style="height:5px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden;margin-bottom:10px">
+            <div style="height:100%;width:${pct}%;background:${quitado?'var(--g)':'var(--acc)'};border-radius:99px;transition:width .5s"></div>
+          </div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            ${quitado?`<div class="al a-ok" style="margin:0;flex:1;text-align:center">✅ Quitado</div>`:`<button class="btn btn-ok" onclick="openPagEmp('${t.id}','${tipoOp}')">${btnLabel}</button>`}
+            <button class="btn btn-g btn-sm" onclick="openTxDet('${t.id}')">👁 Ver</button>
+            <button class="btn btn-d btn-sm" onclick="delTx('${t.id}')">🗑</button>
+          </div>
+        </div></div>`;
+      }).join('');
+    }
+
+    el.innerHTML = `
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--bd)">🤝 Tomei Emprestado</div>
+        ${renderEmpGroup(tomados,'Tomados','🤝','💸 Pagar Parcela','pagar')}
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--bd)">💸 Emprestei</div>
+        ${renderEmpGroup(concedidos,'Concedidos','💸','✅ Registrar Recebimento','receber')}
+      </div>`;
+
+  } else if(curContasTab==='patrimonio'){
+    const totalBens = bens.reduce((s,b)=>s+(b.valorAtual||b.valorAquisicao||0),0);
+    const totalDiv  = bens.reduce((s,b)=>s+(b.empRefId?saldoEmpById(b.empRefId):0),0);
+    const patrimLiq = totalBens - totalDiv;
+
+    el.innerHTML = `
+      <div style="background:linear-gradient(135deg,var(--acc)15,var(--acc2)10);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:14px">
+        <div style="font-size:10px;color:var(--t2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Resumo Patrimonial</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="text-align:center"><div style="font-size:9px;color:var(--t2);margin-bottom:2px">Bens</div><div style="font-weight:800;font-size:13px;color:var(--acc)">${fmt(totalBens)}</div></div>
+          <div style="text-align:center"><div style="font-size:9px;color:var(--t2);margin-bottom:2px">Dívidas</div><div style="font-weight:800;font-size:13px;color:var(--red)">${fmt(totalDiv)}</div></div>
+          <div style="text-align:center"><div style="font-size:9px;color:var(--t2);margin-bottom:2px">Líquido</div><div style="font-weight:800;font-size:13px;color:${patrimLiq>=0?'var(--g)':'var(--red)'}">${fmt(patrimLiq)}</div></div>
+        </div>
+      </div>
+      ${bens.map(b=>{
+        const valorExib = b.valorAtual||b.valorAquisicao||0;
+        const aquisicao = b.valorAquisicao||0;
+        const variacao  = aquisicao>0 ? ((valorExib-aquisicao)/aquisicao*100) : 0;
+        const divida    = b.empRefId ? saldoEmpById(b.empRefId) : 0;
+        const empNome   = b.empRefId ? (txs.find(t=>t.id===b.empRefId)?.desc||'Financiamento') : null;
+        const hist = (b.historico||[]);
+        const histHtml  = hist.length ? hist.slice().reverse().map(h=>`<div style="display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(29,48,80,.2)"><span style="color:var(--t2)">${h.data}</span><span style="font-weight:700">${fmt(h.valor)}</span></div>`).join('') : '<div style="font-size:10px;color:var(--t2)">Sem histórico.</div>';
+        const TIPO_ICO = {imovel:'🏠',veiculo:'🚗',investimento:'📈',equipamento:'🖥️',outro:'📦'};
+        return `<div class="card" style="margin-bottom:10px"><div style="padding:13px">
+          <div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:10px">
+            <div style="font-size:26px">${TIPO_ICO[b.tipo]||'📦'}</div>
+            <div style="flex:1">
+              <div style="font-weight:800;font-size:14px">${b.nome}</div>
+              <div style="font-size:10px;color:var(--t2)">${{imovel:'Imóvel',veiculo:'Veículo',investimento:'Investimento',equipamento:'Equipamento',outro:'Outro'}[b.tipo]||b.tipo}${b.dataAquisicao?' · Adq: '+new Date(b.dataAquisicao+'T12:00').toLocaleDateString('pt-BR'):''}</div>
+              ${b.descricao?`<div style="font-size:10px;color:var(--t3);margin-top:2px">${b.descricao}</div>`:''}
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:10px;color:var(--t2)">Valor atual</div>
+              <div style="font-size:16px;font-weight:800;color:var(--acc)">${fmt(valorExib)}</div>
+              ${aquisicao>0&&aquisicao!==valorExib?`<div style="font-size:10px;color:${variacao>=0?'var(--g)':'var(--red)'}">${variacao>=0?'▲':'▼'} ${Math.abs(variacao).toFixed(1)}%</div>`:''}
+            </div>
+          </div>
+          ${aquisicao>0?`<div style="display:grid;grid-template-columns:1fr 1fr${divida>0?' 1fr':''};gap:6px;margin-bottom:10px">
+            <div style="background:rgba(255,255,255,.05);border-radius:var(--r3);padding:7px;text-align:center">
+              <div style="font-size:9px;color:var(--t2);margin-bottom:2px">Aquisição</div>
+              <div style="font-size:11px;font-weight:700">${fmt(aquisicao)}</div>
+            </div>
+            <div style="background:rgba(52,211,153,.08);border-radius:var(--r3);padding:7px;text-align:center">
+              <div style="font-size:9px;color:var(--t2);margin-bottom:2px">Valorização</div>
+              <div style="font-size:11px;font-weight:700;color:${variacao>=0?'var(--g)':'var(--red)'}">${variacao>=0?'+':''}${variacao.toFixed(1)}%</div>
+            </div>
+            ${divida>0?`<div style="background:rgba(248,113,113,.08);border-radius:var(--r3);padding:7px;text-align:center">
+              <div style="font-size:9px;color:var(--t2);margin-bottom:2px">Dívida</div>
+              <div style="font-size:11px;font-weight:700;color:var(--red)">${fmt(divida)}</div>
+            </div>`:''}
+          </div>`:''}
+          ${empNome?`<div style="font-size:10px;color:var(--t2);margin-bottom:8px;padding:5px 8px;background:rgba(248,113,113,.08);border-radius:var(--r3)">🤝 Financiamento: ${empNome} · Pendente: ${fmt(divida)}</div>`:''}
+          <div style="margin-bottom:8px">
+            <div style="font-size:10px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;cursor:pointer" onclick="togInline('hist-bem-${b.id}')">📈 Histórico de valor ▼</div>
+            <div id="hist-bem-${b.id}" style="display:none">${histHtml}</div>
+          </div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn btn-ok btn-sm" onclick="openAtualizarBem('${b.id}')">📈 Atualizar valor</button>
+            <button class="btn btn-g btn-sm" onclick="editBem('${b.id}')">✏️ Editar</button>
+            <button class="btn btn-d btn-sm" onclick="delBem('${b.id}')">🗑</button>
+          </div>
+        </div></div>`;
+      }).join('')}
+      <button class="btn btn-p" onclick="openAddBem()">＋ Novo Bem</button>`;
   }
+}
+
+// ─── HELPERS empréstimos ───
+function saldoEmpById(empId){
+  const orig = txs.find(t=>t.id===empId);
+  if(!orig) return 0;
+  const pago = txs.filter(t=>t.empRefId===empId).reduce((s,t)=>s+t.valor,0);
+  return Math.max(0, orig.valor - pago);
+}
+
+function openPagEmp(empId, tipoOp){
+  const emp = txs.find(t=>t.id===empId);
+  if(!emp) return;
+  const pend = saldoEmpById(empId);
+  sv('pgemp-id', empId);
+  sv('pgemp-tipo', tipoOp);
+  sv('pgemp-titulo', tipoOp==='pagar' ? '💸 Pagar Parcela' : '✅ Registrar Recebimento');
+  sv('pgemp-nome', emp.desc);
+  sv('pgemp-pendente', fmt(pend));
+  sv('pgemp-val', '');
+  sv('pgemp-data', new Date().toISOString().slice(0,10));
+  fillBancoSel('pgemp-banco');
+  openOv('ov-pgemp');
+}
+
+function salvarPagEmp(){
+  const empId   = gs('pgemp-id');
+  const tipoOp  = gs('pgemp-tipo');
+  const val     = gv('pgemp-val');
+  const data    = gs('pgemp-data');
+  const bancoId = gs('pgemp-banco');
+  if(!val || val<=0){ toast('Informe o valor!','er'); return; }
+  const emp = txs.find(t=>t.id===empId);
+  if(!emp) return;
+  const desc = tipoOp==='pagar'
+    ? `Pagamento — ${emp.desc}`
+    : `Recebimento — ${emp.desc}`;
+  // Tipo: pagar (saída do banco) = despesa_emp, receber (entrada) = receita_emp
+  txs.push({
+    id: nid(),
+    tipo: tipoOp==='pagar' ? 'despesa' : 'receita',
+    desc,
+    valor: val,
+    data,
+    bancoId,
+    catId: '',
+    obs: '',
+    empRefId: empId,   // vínculo com o empréstimo original
+  });
+  DB.set('fa_txs', txs);
+  closeOv('ov-pgemp');
+  renderContasBody();
+  toast(tipoOp==='pagar' ? '✓ Pagamento registrado!' : '✓ Recebimento registrado!');
+}
+
+// ─── HELPERS patrimônio ───
+function openAddBem(){
+  sv('bem-eid','');sv('bem-tit','Novo Bem');
+  ['bem-nome','bem-desc','bem-val-aq','bem-val-at','bem-data-aq'].forEach(id=>sv(id,''));
+  sv('bem-tipo','imovel');
+  sv('bem-emp-ref','');
+  _fillEmpSel('bem-emp-ref');
+  openOv('ov-bem');
+}
+function editBem(id){
+  const b = bens.find(x=>x.id===id); if(!b) return;
+  sv('bem-eid', b.id);
+  sv('bem-tit','Editar Bem');
+  sv('bem-nome', b.nome||'');
+  sv('bem-desc', b.descricao||'');
+  sv('bem-tipo', b.tipo||'imovel');
+  sv('bem-val-aq', b.valorAquisicao||'');
+  sv('bem-val-at', b.valorAtual||'');
+  sv('bem-data-aq', b.dataAquisicao||'');
+  _fillEmpSel('bem-emp-ref');
+  setTimeout(()=>sv('bem-emp-ref', b.empRefId||''), 50);
+  openOv('ov-bem');
+}
+function _fillEmpSel(selId){
+  const sel = document.getElementById(selId); if(!sel) return;
+  const emps = txs.filter(t=>t.tipo==='emprestimo');
+  sel.innerHTML = '<option value="">Sem vínculo</option>' +
+    emps.map(e=>`<option value="${e.id}">${e.desc} (${fmt(e.valor)})</option>`).join('');
+}
+function salvarBem(){
+  const nome = gs('bem-nome').trim();
+  if(!nome){ toast('Informe o nome!','er'); return; }
+  const eid = gs('bem-eid');
+  const obj = {
+    nome,
+    descricao:      gs('bem-desc'),
+    tipo:           gs('bem-tipo'),
+    valorAquisicao: gv('bem-val-aq'),
+    valorAtual:     gv('bem-val-at') || gv('bem-val-aq'),
+    dataAquisicao:  gs('bem-data-aq'),
+    empRefId:       gs('bem-emp-ref'),
+  };
+  if(eid){
+    bens = bens.map(b=>b.id===eid ? {...b,...obj} : b);
+    toast('✓ Bem atualizado!');
+  } else {
+    bens.push({...obj, id:nid(), historico:[]});
+    toast('✓ Bem cadastrado!');
+  }
+  DB.set('fa_bens', bens);
+  closeOv('ov-bem');
+  renderContasBody();
+}
+function delBem(id){
+  if(!confirm('Excluir este bem?')) return;
+  bens = bens.filter(b=>b.id!==id);
+  DB.set('fa_bens', bens);
+  renderContasBody();
+}
+function openAtualizarBem(id){
+  const b = bens.find(x=>x.id===id); if(!b) return;
+  sv('bemval-id', id);
+  sv('bemval-nome', b.nome);
+  sv('bemval-atual', fmt(b.valorAtual||b.valorAquisicao||0));
+  sv('bemval-novo', '');
+  sv('bemval-data', new Date().toISOString().slice(0,10));
+  openOv('ov-bemval');
+}
+function salvarAtualizarBem(){
+  const id   = gs('bemval-id');
+  const novo = gv('bemval-novo');
+  const data = gs('bemval-data');
+  if(!novo || novo<=0){ toast('Informe o novo valor!','er'); return; }
+  bens = bens.map(b=>{
+    if(b.id!==id) return b;
+    const hist = b.historico||[];
+    hist.push({ data: new Date(data+'T12:00').toLocaleDateString('pt-BR'), valor: novo });
+    return {...b, valorAtual: novo, historico: hist};
+  });
+  DB.set('fa_bens', bens);
+  closeOv('ov-bemval');
+  renderContasBody();
+  toast('✓ Valor atualizado!');
 }
 
 // ─── BANCO ───
