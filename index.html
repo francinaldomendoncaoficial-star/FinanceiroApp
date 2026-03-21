@@ -3677,91 +3677,100 @@ function renderContasBody(){
 
 // ─── RENDER INVESTIMENTOS ───
 function renderInvestimentos(el){
-  const TIPO_INV  = {renda_fixa:'🏦',acoes:'📊',fii:'🏢',fundo:'📁',cripto:'₿',poupanca:'🐷',outro:'📈'};
-  const TIPO_NOME = {renda_fixa:'Renda Fixa',acoes:'Ações',fii:'FII',fundo:'Fundo',cripto:'Cripto',poupanca:'Poupança',outro:'Outro'};
-  const TIPO_MOV  = {aplicacao:'Aplicação',resgate:'Resgate',rendimento:'Rendimento',dividendo:'Dividendo'};
+  var IICO  = {renda_fixa:'🏦',acoes:'📊',fii:'🏢',fundo:'📁',cripto:'₿',poupanca:'🐷',outro:'📈'};
+  var INOME = {renda_fixa:'Renda Fixa',acoes:'Ações',fii:'FII',fundo:'Fundo',cripto:'Cripto',poupanca:'Poupança',outro:'Outro'};
+  var MNOME = {aplicacao:'Aplicação',resgate:'Resgate',rendimento:'Rendimento',dividendo:'Dividendo'};
+  var Q = '"';  // alias para aspas duplas dentro de strings
 
-  const totalAplicado   = investimentos.reduce((s,inv)=>{ const m=inv.movs||[]; const ap=m.filter(x=>x.tipo==='aplicacao').reduce((a,x)=>a+x.valor,0)||(inv.valorInicial||0); const re=m.filter(x=>x.tipo==='resgate').reduce((a,x)=>a+x.valor,0); return s+ap-re; },0);
-  const totalRendimento = investimentos.reduce((s,inv)=>{ const m=inv.movs||[]; return s+m.filter(x=>x.tipo==='rendimento'||x.tipo==='dividendo').reduce((a,x)=>a+x.valor,0); },0);
-  const totalAtual      = investimentos.reduce((s,inv)=>s+(inv.valorAtual||0),0);
-  const rentPct         = totalAplicado>0?((totalAtual+totalRendimento-totalAplicado)/totalAplicado*100):0;
+  var totApl = 0, totRend = 0, totAt = 0;
+  investimentos.forEach(function(inv){
+    var m = inv.movs||[];
+    var ap = m.filter(function(x){return x.tipo==='aplicacao';}).reduce(function(s,x){return s+x.valor;},0)||(inv.valorInicial||0);
+    var re = m.filter(function(x){return x.tipo==='resgate';}).reduce(function(s,x){return s+x.valor;},0);
+    var rd = m.filter(function(x){return x.tipo==='rendimento'||x.tipo==='dividendo';}).reduce(function(s,x){return s+x.valor;},0);
+    totApl  += ap - re;
+    totRend += rd;
+    totAt   += inv.valorAtual||0;
+  });
+  var rentG = totApl>0?((totAt+totRend-totApl)/totApl*100):0;
+  var rentGCor = rentG>=0?'var(--g)':'var(--red)';
+  var rentGBg  = rentG>=0?'rgba(52,211,153,.08)':'rgba(248,113,113,.08)';
 
-  // Resumo
-  let html = '<div style="background:linear-gradient(135deg,rgba(129,140,248,.12),rgba(34,211,238,.08));border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:14px">';
-  html += '<div style="font-size:10px;color:var(--t2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">📈 Resumo de Investimentos</div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">';
-  html += '<div style="text-align:center;background:rgba(255,255,255,.05);border-radius:var(--r3);padding:8px"><div style="font-size:9px;color:var(--t2);margin-bottom:3px">Aplicado</div><div style="font-weight:800;font-size:12px;color:var(--acc)">'+fmt(totalAplicado)+'</div></div>';
-  html += '<div style="text-align:center;background:rgba(52,211,153,.08);border-radius:var(--r3);padding:8px"><div style="font-size:9px;color:var(--t2);margin-bottom:3px">Rendimentos</div><div style="font-weight:800;font-size:12px;color:var(--g)">'+fmt(totalRendimento)+'</div></div>';
-  html += '<div style="text-align:center;background:rgba(129,140,248,.08);border-radius:var(--r3);padding:8px"><div style="font-size:9px;color:var(--t2);margin-bottom:3px">Valor Atual</div><div style="font-weight:800;font-size:12px;color:#818cf8">'+fmt(totalAtual)+'</div></div>';
-  html += '<div style="text-align:center;background:rgba('+(rentPct>=0?'52,211,153':'248,113,113')+',.08);border-radius:var(--r3);padding:8px"><div style="font-size:9px;color:var(--t2);margin-bottom:3px">Rentabilidade</div><div style="font-weight:800;font-size:12px;color:'+(rentPct>=0?'var(--g)':'var(--red)')+';">'+(rentPct>=0?'+':'')+rentPct.toFixed(1)+'%</div></div>';
-  html += '</div></div>';
+  var h = '';
+  // ── Resumo ──
+  h += '<div style='+Q+'background:linear-gradient(135deg,rgba(129,140,248,.12),rgba(34,211,238,.08));border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:14px'+Q+'>';
+  h += '<div style='+Q+'font-size:10px;color:var(--t2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700'+Q+'>📈 Resumo de Investimentos</div>';
+  h += '<div style='+Q+'display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px'+Q+'>';
+  h += '<div style='+Q+'text-align:center;background:rgba(255,255,255,.05);border-radius:var(--r3);padding:8px'+Q+'><div style='+Q+'font-size:9px;color:var(--t2);margin-bottom:3px'+Q+'>Aplicado</div><div style='+Q+'font-weight:800;font-size:12px;color:var(--acc)'+Q+'>'+fmt(totApl)+'</div></div>';
+  h += '<div style='+Q+'text-align:center;background:rgba(52,211,153,.08);border-radius:var(--r3);padding:8px'+Q+'><div style='+Q+'font-size:9px;color:var(--t2);margin-bottom:3px'+Q+'>Rendimentos</div><div style='+Q+'font-weight:800;font-size:12px;color:var(--g)'+Q+'>'+fmt(totRend)+'</div></div>';
+  h += '<div style='+Q+'text-align:center;background:rgba(129,140,248,.08);border-radius:var(--r3);padding:8px'+Q+'><div style='+Q+'font-size:9px;color:var(--t2);margin-bottom:3px'+Q+'>Valor Atual</div><div style='+Q+'font-weight:800;font-size:12px;color:#818cf8'+Q+'>'+fmt(totAt)+'</div></div>';
+  h += '<div style='+Q+'text-align:center;background:'+rentGBg+';border-radius:var(--r3);padding:8px'+Q+'><div style='+Q+'font-size:9px;color:var(--t2);margin-bottom:3px'+Q+'>Rentabilidade</div><div style='+Q+'font-weight:800;font-size:12px;color:'+rentGCor+Q+'>'+(rentG>=0?'+':'')+rentG.toFixed(1)+'%</div></div>';
+  h += '</div></div>';
 
-  // Cards
+  // ── Cards ──
   if(!investimentos.length){
-    html += '<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">Nenhum investimento cadastrado ainda.<br><span style="font-size:11px">Adicione seu primeiro abaixo 👇</span></div>';
+    h += '<div style='+Q+'text-align:center;padding:24px;color:var(--t2);font-size:13px'+Q+'>Nenhum investimento cadastrado ainda.</div>';
   } else {
     investimentos.forEach(function(inv){
-      const movs      = inv.movs||[];
-      const aplicado  = movs.filter(function(m){return m.tipo==='aplicacao';}).reduce(function(s,m){return s+m.valor;},0)||(inv.valorInicial||0);
-      const resgatado = movs.filter(function(m){return m.tipo==='resgate';}).reduce(function(s,m){return s+m.valor;},0);
-      const rendidos  = movs.filter(function(m){return m.tipo==='rendimento'||m.tipo==='dividendo';}).reduce(function(s,m){return s+m.valor;},0);
-      const liquido   = aplicado - resgatado;
-      const valorAt   = inv.valorAtual||liquido;
-      const rent      = liquido>0?((valorAt+rendidos-liquido)/liquido*100):0;
-      const rentCor   = rent>=0?'var(--g)':'var(--red)';
-      const tipoNome  = TIPO_NOME[inv.tipo]||'Investimento';
-      const tipoIco   = TIPO_INV[inv.tipo]||'📈';
+      var m   = inv.movs||[];
+      var ap  = m.filter(function(x){return x.tipo==='aplicacao';}).reduce(function(s,x){return s+x.valor;},0)||(inv.valorInicial||0);
+      var re  = m.filter(function(x){return x.tipo==='resgate';}).reduce(function(s,x){return s+x.valor;},0);
+      var rd  = m.filter(function(x){return x.tipo==='rendimento'||x.tipo==='dividendo';}).reduce(function(s,x){return s+x.valor;},0);
+      var liq = ap - re;
+      var vat = inv.valorAtual||liq;
+      var rt  = liq>0?((vat+rd-liq)/liq*100):0;
+      var rtC = rt>=0?'var(--g)':'var(--red)';
+      var ico = IICO[inv.tipo]||'📈';
+      var nom = INOME[inv.tipo]||'Investimento';
+      var cor = inv.corretora?(' · '+inv.corretora):'';
+      var dat = inv.dataInicio?(' · Desde '+new Date(inv.dataInicio+'T12:00').toLocaleDateString('pt-BR')):'';
+      var obs = inv.obs?('<div style='+Q+'font-size:10px;color:var(--t3);margin-top:2px'+Q+'>'+inv.obs+'</div>'):'';
 
-      // Movimentações recentes
-      let movsHtml = '';
-      movs.slice().reverse().slice(0,5).forEach(function(m){
-        const d     = new Date(m.data+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
-        const mIco  = m.tipo==='aplicacao'?'💰':m.tipo==='resgate'?'💵':m.tipo==='dividendo'?'🎁':'📈';
-        const mCor  = m.tipo==='aplicacao'?'var(--acc)':m.tipo==='resgate'?'var(--yel)':'var(--g)';
-        const sinal = m.tipo==='resgate'?'−':'+';
-        const lbl   = TIPO_MOV[m.tipo]||m.tipo;
-        const bancoTxt = m.banco?' · 🏦 '+m.banco:'';
-        const obsTxt   = m.obs?' — '+m.obs:'';
-        movsHtml += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(29,48,80,.2)">';
-        movsHtml += '<span style="font-size:14px">'+mIco+'</span>';
-        movsHtml += '<div style="flex:1"><div style="font-size:11px;font-weight:600">'+lbl+obsTxt+'</div>';
-        movsHtml += '<div style="font-size:10px;color:var(--t2)">'+d+bancoTxt+'</div></div>';
-        movsHtml += '<div style="font-size:12px;font-weight:700;color:'+mCor+'">'+sinal+fmt(m.valor)+'</div></div>';
+      // movimentações recentes
+      var mh = '';
+      m.slice().reverse().slice(0,5).forEach(function(mv){
+        var d  = new Date(mv.data+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+        var mi = mv.tipo==='aplicacao'?'💰':mv.tipo==='resgate'?'💵':mv.tipo==='dividendo'?'🎁':'📈';
+        var mc = mv.tipo==='aplicacao'?'var(--acc)':mv.tipo==='resgate'?'var(--yel)':'var(--g)';
+        var ms = mv.tipo==='resgate'?'−':'+';
+        var ml = MNOME[mv.tipo]||mv.tipo;
+        var mo = mv.obs?(' — '+mv.obs):'';
+        var mb = mv.banco?(' · 🏦 '+mv.banco):'';
+        mh += '<div style='+Q+'display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(29,48,80,.2)'+Q+'>';
+        mh += '<span>'+mi+'</span>';
+        mh += '<div style='+Q+'flex:1'+Q+'><div style='+Q+'font-size:11px;font-weight:600'+Q+'>'+ml+mo+'</div><div style='+Q+'font-size:10px;color:var(--t2)'+Q+'>'+d+mb+'</div></div>';
+        mh += '<div style='+Q+'font-size:12px;font-weight:700;color:'+mc+Q+'>'+ms+fmt(mv.valor)+'</div></div>';
       });
+      var hid = 'mi-'+inv.id;
+      var histB = m.length?('<div style='+Q+'margin-bottom:8px'+Q+'><div style='+Q+'font-size:10px;color:var(--t2);font-weight:700;cursor:pointer'+Q+' onclick='+Q+'togInline('+String.fromCharCode(39)+hid+String.fromCharCode(39)+')'+Q+'>🕐 Últimas movimentações ▼</div><div id='+Q+hid+Q+' style='+Q+'display:none'+Q+'>'+mh+'</div></div>'):'';
 
-      const corretoraTxt = inv.corretora?' · '+inv.corretora:'';
-      const dataTxt = inv.dataInicio?' · Desde '+new Date(inv.dataInicio+'T12:00').toLocaleDateString('pt-BR'):'';
-      const obsBem  = inv.obs?'<div style="font-size:10px;color:var(--t3);margin-top:2px">'+inv.obs+'</div>':'';
-      const histId = 'movs-inv-'+inv.id;
-      const histBlock = movs.length?('<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;cursor:pointer" onclick="togInline(&quot;'+histId+'&quot;)">🕐 Últimas movimentações ▼</div><div id="'+histId+'" style="display:none">'+movsHtml+'</div></div>'):'';
-
-      html += '<div class="card" style="margin-bottom:10px"><div style="padding:13px">';
-      html += '<div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:10px">';
-      html += '<div style="font-size:26px">'+tipoIco+'</div>';
-      html += '<div style="flex:1"><div style="font-weight:800;font-size:14px">'+inv.nome+'</div>';
-      html += '<div style="font-size:10px;color:var(--t2)">'+tipoNome+corretoraTxt+dataTxt+'</div>'+obsBem+'</div>';
-      html += '<div style="text-align:right;flex-shrink:0"><div style="font-size:9px;color:var(--t2)">Valor atual</div>';
-      html += '<div style="font-size:16px;font-weight:800;color:#818cf8">'+fmt(valorAt)+'</div>';
-      html += '<div style="font-size:10px;color:'+rentCor+';">'+(rent>=0?'▲':'▼')+' '+Math.abs(rent).toFixed(1)+'%</div></div></div>';
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">';
-      html += '<div style="background:rgba(129,140,248,.08);border-radius:var(--r3);padding:7px;text-align:center"><div style="font-size:9px;color:var(--t2);margin-bottom:2px">💰 Aplicado</div><div style="font-size:11px;font-weight:700;color:var(--acc)">'+fmt(liquido)+'</div></div>';
-      html += '<div style="background:rgba(52,211,153,.08);border-radius:var(--r3);padding:7px;text-align:center"><div style="font-size:9px;color:var(--t2);margin-bottom:2px">📈 Rendeu</div><div style="font-size:11px;font-weight:700;color:var(--g)">'+fmt(rendidos)+'</div></div>';
-      html += '<div style="background:rgba(251,191,36,.08);border-radius:var(--r3);padding:7px;text-align:center"><div style="font-size:9px;color:var(--t2);margin-bottom:2px">💵 Resgatado</div><div style="font-size:11px;font-weight:700;color:var(--yel)">'+fmt(resgatado)+'</div></div></div>';
-      html += histBlock;
-      html += '<div style="display:flex;gap:7px;flex-wrap:wrap">';
-      html += '<button class="btn btn-ok btn-sm" onclick="openMovInv(''+inv.id+'','aplicacao')">💰 Aplicar</button>';
-      html += '<button class="btn btn-g btn-sm" onclick="openMovInv(''+inv.id+'','rendimento')">📈 Rendimento</button>';
-      html += '<button class="btn btn-g btn-sm" onclick="openMovInv(''+inv.id+'','dividendo')">🎁 Dividendo</button>';
-      html += '<button class="btn btn-g btn-sm" onclick="openMovInv(''+inv.id+'','resgate')">💵 Resgatar</button>';
-      html += '<button class="btn btn-g btn-sm" onclick="openAtualizarInv(''+inv.id+'')">✏️ Valor atual</button>';
-      html += '<button class="btn btn-d btn-sm" onclick="delInv(''+inv.id+'')">🗑</button></div>';
-      html += '</div></div>';
+      h += '<div class='+Q+'card'+Q+' style='+Q+'margin-bottom:10px'+Q+'><div style='+Q+'padding:13px'+Q+'>';
+      h += '<div style='+Q+'display:flex;align-items:flex-start;gap:9px;margin-bottom:10px'+Q+'>';
+      h += '<div style='+Q+'font-size:26px'+Q+'>'+ico+'</div>';
+      h += '<div style='+Q+'flex:1'+Q+'><div style='+Q+'font-weight:800;font-size:14px'+Q+'>'+inv.nome+'</div>';
+      h += '<div style='+Q+'font-size:10px;color:var(--t2)'+Q+'>'+nom+cor+dat+'</div>'+obs+'</div>';
+      h += '<div style='+Q+'text-align:right;flex-shrink:0'+Q+'>';
+      h += '<div style='+Q+'font-size:9px;color:var(--t2)'+Q+'>Valor atual</div>';
+      h += '<div style='+Q+'font-size:16px;font-weight:800;color:#818cf8'+Q+'>'+fmt(vat)+'</div>';
+      h += '<div style='+Q+'font-size:10px;color:'+rtC+Q+'>'+(rt>=0?'▲':'▼')+' '+Math.abs(rt).toFixed(1)+'%</div></div></div>';
+      h += '<div style='+Q+'display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px'+Q+'>';
+      h += '<div style='+Q+'background:rgba(129,140,248,.08);border-radius:var(--r3);padding:7px;text-align:center'+Q+'><div style='+Q+'font-size:9px;color:var(--t2);margin-bottom:2px'+Q+'>💰 Aplicado</div><div style='+Q+'font-size:11px;font-weight:700;color:var(--acc)'+Q+'>'+fmt(liq)+'</div></div>';
+      h += '<div style='+Q+'background:rgba(52,211,153,.08);border-radius:var(--r3);padding:7px;text-align:center'+Q+'><div style='+Q+'font-size:9px;color:var(--t2);margin-bottom:2px'+Q+'>📈 Rendeu</div><div style='+Q+'font-size:11px;font-weight:700;color:var(--g)'+Q+'>'+fmt(rd)+'</div></div>';
+      h += '<div style='+Q+'background:rgba(251,191,36,.08);border-radius:var(--r3);padding:7px;text-align:center'+Q+'><div style='+Q+'font-size:9px;color:var(--t2);margin-bottom:2px'+Q+'>💵 Resgatado</div><div style='+Q+'font-size:11px;font-weight:700;color:var(--yel)'+Q+'>'+fmt(re)+'</div></div></div>';
+      h += histB;
+      h += '<div style='+Q+'display:flex;gap:7px;flex-wrap:wrap'+Q+'>';
+      h += '<button class='+Q+'btn btn-ok btn-sm'+Q+' onclick='+Q+'openMovInv('+String.fromCharCode(39)+inv.id+String.fromCharCode(39)+','+String.fromCharCode(39)+'aplicacao'+String.fromCharCode(39)+')'+Q+'>💰 Aplicar</button>';
+      h += '<button class='+Q+'btn btn-g btn-sm'+Q+' onclick='+Q+'openMovInv('+String.fromCharCode(39)+inv.id+String.fromCharCode(39)+','+String.fromCharCode(39)+'rendimento'+String.fromCharCode(39)+')'+Q+'>📈 Rendimento</button>';
+      h += '<button class='+Q+'btn btn-g btn-sm'+Q+' onclick='+Q+'openMovInv('+String.fromCharCode(39)+inv.id+String.fromCharCode(39)+','+String.fromCharCode(39)+'dividendo'+String.fromCharCode(39)+')'+Q+'>🎁 Dividendo</button>';
+      h += '<button class='+Q+'btn btn-g btn-sm'+Q+' onclick='+Q+'openMovInv('+String.fromCharCode(39)+inv.id+String.fromCharCode(39)+','+String.fromCharCode(39)+'resgate'+String.fromCharCode(39)+')'+Q+'>💵 Resgatar</button>';
+      h += '<button class='+Q+'btn btn-g btn-sm'+Q+' onclick='+Q+'openAtualizarInv('+String.fromCharCode(39)+inv.id+String.fromCharCode(39)+')'+Q+'>✏️ Valor atual</button>';
+      h += '<button class='+Q+'btn btn-d btn-sm'+Q+' onclick='+Q+'delInv('+String.fromCharCode(39)+inv.id+String.fromCharCode(39)+')'+Q+'>🗑</button></div>';
+      h += '</div></div>';
     });
   }
-  html += '<button class="btn btn-p" onclick="openAddInv()">＋ Novo Investimento</button>';
-  el.innerHTML = html;
+  h += '<button class='+Q+'btn btn-p'+Q+' onclick='+Q+'openAddInv()'+Q+'>＋ Novo Investimento</button>';
+  el.innerHTML = h;
 }
-
 // ─── HELPERS investimentos ───
 function openAddInv(){
   sv('inv-eid','');sv('inv-tit','Novo Investimento');
