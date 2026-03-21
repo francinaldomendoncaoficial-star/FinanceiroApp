@@ -845,12 +845,25 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
     </div>
     <!-- RECUPERAR -->
     <div class="auth-section" id="sec-recuperar">
-      <div id="al-rec" class="al a-e"><span>⚠️</span><span id="al-rec-msg"></span></div>
-      <div id="al-rec-ok" class="al a-ok"><span>✅</span><span>Código enviado! Verifique seu e-mail.</span></div>
-      <p style="font-size:12px;color:var(--t2);margin-bottom:14px;line-height:1.6">Informe seu e-mail e enviaremos um código para redefinir sua senha.</p>
-      <div class="af af-icon"><label>E-mail</label><span>📧</span><input type="email" id="rec-email" placeholder="seu@email.com"></div>
-      <button class="btn-auth btn-primary" onclick="doRecuperar()">Enviar Código</button>
-      <div style="text-align:center;margin-top:8px"><button class="btn-ghost" onclick="authTab('login')">← Voltar ao login</button></div>
+      <!-- ETAPA 1: pedir e-mail -->
+      <div id="rec-step1">
+        <div id="al-rec" class="al a-e"><span>⚠️</span><span id="al-rec-msg"></span></div>
+        <p style="font-size:12px;color:var(--t2);margin-bottom:14px;line-height:1.6">Informe seu e-mail e enviaremos um código para redefinir sua senha.</p>
+        <div class="af af-icon"><label>E-mail</label><span>📧</span><input type="email" id="rec-email" placeholder="seu@email.com"></div>
+        <button class="btn-auth btn-primary" id="btn-rec" onclick="doRecuperar()"><span id="rec-spinner" style="display:none" class="spinner"></span><span id="rec-txt">Enviar Código</span></button>
+        <div style="text-align:center;margin-top:8px"><button class="btn-ghost" onclick="authTab('login')">← Voltar ao login</button></div>
+      </div>
+      <!-- ETAPA 2: código + nova senha -->
+      <div id="rec-step2" style="display:none">
+        <div id="al-redef" class="al a-e"><span>⚠️</span><span id="al-redef-msg"></span></div>
+        <div id="al-redef-ok" class="al a-ok"><span>✅</span><span>Senha redefinida! Faça login.</span></div>
+        <p style="font-size:12px;color:var(--t2);margin-bottom:14px;line-height:1.6">Digite o código de 6 dígitos enviado para <strong id="rec-email-show" style="color:var(--acc)"></strong> e escolha uma nova senha.</p>
+        <div class="af"><label>Código de verificação</label><input type="text" id="redef-codigo" placeholder="000000" maxlength="6" inputmode="numeric" style="letter-spacing:6px;font-size:18px;text-align:center"></div>
+        <div class="af af-icon"><label>Nova senha</label><span>🔒</span><input type="password" id="redef-senha" placeholder="Mínimo 6 caracteres"><span class="af-eye" onclick="togglePwd('redef-senha')">👁</span></div>
+        <div class="af af-icon"><label>Confirmar nova senha</label><span>🔒</span><input type="password" id="redef-senha2" placeholder="Repita a senha"></div>
+        <button class="btn-auth btn-primary" id="btn-redef" onclick="doRedefinir()"><span id="redef-spinner" style="display:none" class="spinner"></span><span id="redef-txt">Redefinir Senha</span></button>
+        <div style="text-align:center;margin-top:8px"><button class="btn-ghost" onclick="voltarStep1Rec()">← Reenviar código</button></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1547,7 +1560,9 @@ function authTab(tab){
   $('tab-'+tab)?.classList.add('on');
   $('sec-'+tab)?.classList.add('on');
   // hide all alerts
-  ['al-login','al-cad','al-cad-ok','al-rec','al-rec-ok'].forEach(hideAl);
+  ['al-login','al-cad','al-cad-ok','al-rec','al-redef','al-redef-ok'].forEach(hideAl);
+  // reset recuperar steps
+  if($('rec-step1')){ $('rec-step1').style.display='block'; $('rec-step2').style.display='none'; }
 }
 
 async function doLogin(){
@@ -1604,16 +1619,56 @@ async function doCadastro(){
 }
 
 async function doRecuperar(){
-  hideAl('al-rec'); hideAl('al-rec-ok');
+  hideAl('al-rec');
   const email = $('rec-email').value.trim();
   if(!email){ showAl('al-rec','Informe seu e-mail'); return; }
+  setLoading('btn-rec','rec-spinner','rec-txt',true,'Enviando...');
   try{
     const res = await gasCall('recuperarSenha',{email});
-    if(res.ok) showAl('al-rec-ok','',true);
-    else showAl('al-rec', res.msg || 'E-mail não encontrado');
+    if(res.ok){
+      // Avança para etapa 2
+      $('rec-step1').style.display = 'none';
+      $('rec-step2').style.display = 'block';
+      $('rec-email-show').textContent = email;
+      $('redef-codigo').focus();
+    } else {
+      showAl('al-rec', res.msg || 'E-mail não encontrado');
+    }
   } catch(e){
     showAl('al-rec','Erro de conexão');
   }
+  setLoading('btn-rec','rec-spinner','rec-txt',false,'Enviar Código');
+}
+
+function voltarStep1Rec(){
+  $('rec-step2').style.display = 'none';
+  $('rec-step1').style.display = 'block';
+  hideAl('al-redef'); hideAl('al-redef-ok');
+  doRecuperar(); // reenvia o código
+}
+
+async function doRedefinir(){
+  hideAl('al-redef'); hideAl('al-redef-ok');
+  const email  = $('rec-email').value.trim();
+  const codigo = $('redef-codigo').value.trim();
+  const senha  = $('redef-senha').value;
+  const senha2 = $('redef-senha2').value;
+  if(!codigo || codigo.length < 6){ showAl('al-redef','Digite o código de 6 dígitos'); return; }
+  if(!senha || senha.length < 6){ showAl('al-redef','A senha deve ter ao menos 6 caracteres'); return; }
+  if(senha !== senha2){ showAl('al-redef','As senhas não coincidem'); return; }
+  setLoading('btn-redef','redef-spinner','redef-txt',true,'Redefinindo...');
+  try{
+    const res = await gasCall('redefinirSenha',{email, codigo, senha});
+    if(res.ok){
+      showAl('al-redef-ok','',true);
+      setTimeout(()=>{ authTab('login'); }, 2500);
+    } else {
+      showAl('al-redef', res.msg || 'Código inválido ou expirado');
+    }
+  } catch(e){
+    showAl('al-redef','Erro de conexão');
+  }
+  setLoading('btn-redef','redef-spinner','redef-txt',false,'Redefinir Senha');
 }
 
 
