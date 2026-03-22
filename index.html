@@ -1374,6 +1374,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   <div class="f2">
     <div><label>Valor Previsto (R$)</label><input type="number" id="prev-val" placeholder="0,00" step=".01"></div>
     <div id="prev-dia-wrap"><label id="prev-dia-lbl">Dia do Mês</label><input type="number" id="prev-dia" placeholder="1-31" min="1" max="31"></div>
+    <div id="prev-mes-wrap" style="display:none"><label>Mês do Ano</label><select id="prev-mes-anual"><option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option><option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option><option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option><option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option></select></div>
+    <div id="prev-mes-wrap" style="display:none"><label>Mês do Ano</label>
+      <select id="prev-mes-anual">
+        <option value="0">Janeiro</option><option value="1">Fevereiro</option>
+        <option value="2">Março</option><option value="3">Abril</option>
+        <option value="4">Maio</option><option value="5">Junho</option>
+        <option value="6">Julho</option><option value="7">Agosto</option>
+        <option value="8">Setembro</option><option value="9">Outubro</option>
+        <option value="10">Novembro</option><option value="11">Dezembro</option>
+      </select>
+    </div>
   </div>
 
   <!-- Dias da semana (só para semanal) -->
@@ -2577,7 +2588,9 @@ function prevOccurrences(p, m, y){
     return (ini.getMonth()===m && ini.getFullYear()===y) ? 1 : 0;
   }
   if(rec==='anual'){
-    if(ini.getMonth()!==m) return 0;
+    // Usa mesAnual se definido, senão usa o mês de início
+    const mesAlvo = (p.mesAnual !== undefined && p.mesAnual !== null) ? parseInt(p.mesAnual) : ini.getMonth();
+    if(m !== mesAlvo) return 0;
     const years = y - ini.getFullYear();
     if(years < 0) return 0;
     const d = new Date(y, m, parseInt(p.dia)||ini.getDate());
@@ -3303,6 +3316,7 @@ function recLabel(p){
 
 function updatePrevRec(){
   const rec=gs('prev-rec');
+  const mesAnual = rec==='anual' ? parseInt(gs('prev-mes-anual')||'0') : null;
   const isRec=rec!=='unica';
   document.getElementById('prev-fim-wrap').style.display=isRec?'block':'none';
   // show weekdays only for semanal
@@ -3311,8 +3325,11 @@ function updatePrevRec(){
   // label for dia field
   const diaWrap=document.getElementById('prev-dia-wrap');
   const diaLbl=document.getElementById('prev-dia-lbl');
+  const mesWrap=document.getElementById('prev-mes-wrap');
   if(rec==='diaria'||rec==='uteis'||rec==='semanal'){diaWrap.style.display='none';}
-  else{diaWrap.style.display='block';diaLbl.textContent=rec==='anual'?'Dia do Mês':'Dia do Mês';}
+  else{diaWrap.style.display='block';diaLbl.textContent='Dia do Mês';}
+  if(rec==='anual'){mesWrap.style.display='block';}
+  else{mesWrap.style.display='none';}
 }
 function updatePrevFim(){
   const t=gs('prev-fim-tipo');
@@ -3350,6 +3367,7 @@ function editPrev(id){
   sv('prev-eid',p.id);sv('prev-tit','Editar Previsão');
   sv('prev-tipo',p.tipo);sv('prev-desc',p.desc);sv('prev-val',p.valor);
   sv('prev-dia',p.dia||'');sv('prev-rec',p.rec||'mensal');sv('prev-inicio',p.inicio||'');
+  if(p.rec==='anual' && p.mesAnual!==undefined && p.mesAnual!==null){ setTimeout(()=>{ const s=document.getElementById('prev-mes-anual'); if(s) s.value=p.mesAnual; },30); }
   sv('prev-fim-tipo',p.fimTipo||'nunca');sv('prev-fim-data',p.fimData||'');sv('prev-fim-reps',p.fimReps||'');
   [0,1,2,3,4,5,6].forEach(d=>{const el=document.getElementById('wd'+d);if(el)el.checked=(p.weekdays||[]).map(Number).includes(d);});
   fillCatForPrev();
@@ -3368,9 +3386,10 @@ function salvarPrev(){
   const rec=gs('prev-rec');
   const weekdays=rec==='semanal'?[0,1,2,3,4,5,6].filter(d=>{const el=document.getElementById('wd'+d);return el&&el.checked;}):[]; 
   const fimTipo=rec==='unica'?'nunca':gs('prev-fim-tipo');
+  const mesAnual = rec==='anual' ? parseInt(document.getElementById('prev-mes-anual')?.value||'0') : null;
   const obj={
     tipo:gs('prev-tipo'),desc,valor:val,dia:gs('prev-dia')||'',
-    rec,weekdays,catId:gs('prev-cat'),subNome:gs('prev-sub'),inicio:gs('prev-inicio'),
+    rec,weekdays,mesAnual,catId:gs('prev-cat'),subNome:gs('prev-sub'),inicio:gs('prev-inicio'),
     fimTipo,fimData:fimTipo==='data'?gs('prev-fim-data'):'',
     fimReps:fimTipo==='reps'?parseInt(gs('prev-fim-reps'))||0:0,
   };
