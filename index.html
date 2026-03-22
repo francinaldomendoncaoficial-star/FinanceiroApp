@@ -1801,6 +1801,7 @@ function loadLocalSession(){
   }catch(e){ return null; }
 }
 function doLogout(){
+  DB.clearCache();
   state.user = null;
   state.txs = [];
   try{ sessionStorage.removeItem('fa_user'); }catch(e){}
@@ -2275,24 +2276,40 @@ function closeAdAndGoAssinar(){ closeAd(); goPage('assinar'); }
 ═══════════════════════════════════════════════════════ */
 async function syncUserDataFromSheets(){
   if(!state.user?.planilhaId) return;
+  showSyncIndicator('syncing');
   try{
     const res = await gasCall('getUserData',{email:state.user.email, planilhaId:state.user.planilhaId});
     if(res.ok && res.data){
       const d = res.data;
-      let changed = false;
-      if(d.bancos     && Array.isArray(d.bancos))     { bancos=d.bancos;         localStorage.setItem('fa_bancos',    JSON.stringify(bancos));     changed=true; }
-      if(d.cartoes    && Array.isArray(d.cartoes))    { cartoes=d.cartoes;       localStorage.setItem('fa_cartoes',   JSON.stringify(cartoes));    changed=true; }
-      if(d.beneficios && Array.isArray(d.beneficios)) { beneficios=d.beneficios; localStorage.setItem('fa_beneficios',JSON.stringify(beneficios)); changed=true; }
-      if(d.caixinhas  && Array.isArray(d.caixinhas))  { caixinhas=d.caixinhas;   localStorage.setItem('fa_caixinhas', JSON.stringify(caixinhas));  changed=true; }
-      if(d.cats       && Array.isArray(d.cats))       { cats=d.cats.length?d.cats:defaultCats(); localStorage.setItem('fa_cats', JSON.stringify(cats)); changed=true; }
-      if(d.txs        && Array.isArray(d.txs))        { txs=d.txs;               localStorage.setItem('fa_txs',       JSON.stringify(txs));        changed=true; }
-      if(d.previsoes  && Array.isArray(d.previsoes))  { previsoes=d.previsoes;   localStorage.setItem('fa_prev',      JSON.stringify(previsoes));  changed=true; }
-      if(d.bens       && Array.isArray(d.bens))       { bens=d.bens;             localStorage.setItem('fa_bens',      JSON.stringify(bens));       changed=true; }
-      if(d.investimentos && Array.isArray(d.investimentos)){ investimentos=d.investimentos; localStorage.setItem('fa_inv', JSON.stringify(investimentos)); changed=true; }
-      // Re-render se vieram dados do servidor (podem diferir do cache local)
-      if(changed && typeof renderPage === 'function') renderPage(typeof curPage!=='undefined' ? curPage : 'dash');
+      // Planilha é a fonte de verdade — sobrescreve tudo
+      bancos        = Array.isArray(d.bancos)        ? d.bancos        : [];
+      cartoes       = Array.isArray(d.cartoes)       ? d.cartoes       : [];
+      beneficios    = Array.isArray(d.beneficios)    ? d.beneficios    : [];
+      caixinhas     = Array.isArray(d.caixinhas)     ? d.caixinhas     : [];
+      cats          = (Array.isArray(d.cats) && d.cats.length) ? d.cats : defaultCats();
+      txs           = Array.isArray(d.txs)           ? d.txs           : [];
+      previsoes     = Array.isArray(d.previsoes)     ? d.previsoes     : [];
+      bens          = Array.isArray(d.bens)          ? d.bens          : [];
+      investimentos = Array.isArray(d.investimentos) ? d.investimentos : [];
+      // Atualiza cache local
+      localStorage.setItem('fa_bancos',    JSON.stringify(bancos));
+      localStorage.setItem('fa_cartoes',   JSON.stringify(cartoes));
+      localStorage.setItem('fa_beneficios',JSON.stringify(beneficios));
+      localStorage.setItem('fa_caixinhas', JSON.stringify(caixinhas));
+      localStorage.setItem('fa_cats',      JSON.stringify(cats));
+      localStorage.setItem('fa_txs',       JSON.stringify(txs));
+      localStorage.setItem('fa_prev',      JSON.stringify(previsoes));
+      localStorage.setItem('fa_bens',      JSON.stringify(bens));
+      localStorage.setItem('fa_inv',       JSON.stringify(investimentos));
+      showSyncIndicator('ok');
+      if(typeof renderPage === 'function') renderPage(typeof curPage!=='undefined' ? curPage : 'dash');
+    } else {
+      showSyncIndicator('err');
     }
-  } catch(e){ /* usa cache local se offline */ }
+  } catch(e){
+    showSyncIndicator('err');
+    // Mantém cache local se offline
+  }
 }
 
 /* Sync write: após qualquer DB.set, sincroniza com Sheets (debounced 2s) */
@@ -2362,13 +2379,22 @@ function showSyncIndicator(status){
 // STORAGE
 // ═══════════════════════════════════
 const DB={
-  get(k,d=null){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d}catch{return d}},
-  set(k,v){
-    try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn(e);}
-    // Async sync to Sheets (debounced — 2s after last write)
-    clearTimeout(DB._syncTimer);
-    DB._syncTimer=setTimeout(()=>{ if(typeof syncWriteToSheets==='function') syncWriteToSheets(); },2000);
+  get(k,d=null){
+    // Lê apenas do localStorage (cache)
+    try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d}catch{return d}
   },
+  set(k,v){
+    // Salva no localStorage como cache imediato
+    try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn(e);}
+    // Salva na planilha como fonte de verdade (debounced 800ms)
+    clearTimeout(DB._syncTimer);
+    DB._syncTimer=setTimeout(()=>{ if(typeof syncWriteToSheets==='function') syncWriteToSheets(); },800);
+  },
+  // Limpa todo o cache local (usado no logout)
+  clearCache(){
+    ['fa_bancos','fa_cartoes','fa_beneficios','fa_caixinhas','fa_cats',
+     'fa_txs','fa_prev','fa_bens','fa_inv','fa_idc'].forEach(k=>localStorage.removeItem(k));
+  }
 };
 
 // ═══════════════════════════════════
@@ -2378,14 +2404,16 @@ let CM=new Date().getMonth(), CY=new Date().getFullYear();
 let curPage='dash', curTxFilter='todos', curContasTab='bancos', curCatTab='despesa';
 let curTipo='despesa', subCtr=0;
 
-let bancos     = DB.get('fa_bancos',[]);
-let cartoes    = DB.get('fa_cartoes',[]);
-let beneficios = DB.get('fa_beneficios',[]);
-let caixinhas  = DB.get('fa_caixinhas',[]);
-let cats       = (()=>{ const c=DB.get('fa_cats',null); return (c&&c.length)?c:defaultCats(); })();
-let txs        = DB.get('fa_txs',[]);
-let previsoes  = DB.get('fa_prev',[]);
-let bens       = DB.get('fa_bens',[]);
+// Dados carregados da planilha (fonte de verdade) no login
+// localStorage é apenas cache — sobrescrito a cada login
+let bancos        = DB.get('fa_bancos',[]);
+let cartoes       = DB.get('fa_cartoes',[]);
+let beneficios    = DB.get('fa_beneficios',[]);
+let caixinhas     = DB.get('fa_caixinhas',[]);
+let cats          = (()=>{ const c=DB.get('fa_cats',null); return (c&&c.length)?c:defaultCats(); })();
+let txs           = DB.get('fa_txs',[]);
+let previsoes     = DB.get('fa_prev',[]);
+let bens          = DB.get('fa_bens',[]);
 let investimentos = DB.get('fa_inv',[]);
 let idC        = DB.get('fa_idc',1);
 function nid(){idC++;DB.set('fa_idc',idC);return 'x'+idC;}
