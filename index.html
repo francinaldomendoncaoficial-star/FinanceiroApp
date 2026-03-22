@@ -2588,11 +2588,14 @@ function prevOccurrences(p, m, y){
     return (ini.getMonth()===m && ini.getFullYear()===y) ? 1 : 0;
   }
   if(rec==='anual'){
-    // Usa mesAnual se definido, senão usa o mês de início
-    const mesAlvo = (p.mesAnual !== undefined && p.mesAnual !== null) ? parseInt(p.mesAnual) : ini.getMonth();
-    if(m !== mesAlvo) return 0;
     const years = y - ini.getFullYear();
     if(years < 0) return 0;
+    // Se mesAnual está definido, usa ele; senão usa mês de início
+    if(p.mesAnual !== undefined && p.mesAnual !== null){
+      if(m !== parseInt(p.mesAnual)) return 0;
+    } else {
+      if(m !== ini.getMonth()) return 0;
+    }
     const d = new Date(y, m, parseInt(p.dia)||ini.getDate());
     return fimOk(d) ? 1 : 0;
   }
@@ -2795,7 +2798,8 @@ function fillSelOpts(selId,items){
 }
 function fillPrevLinkSel(selId,tipo){
   const sel=document.getElementById(selId);if(!sel)return;
-  const pa=prevAtivas().filter(p=>p.tipo===tipo);
+  // Mostra todas as previsões do tipo, não só as do mês atual
+  const pa=previsoes.filter(p=>p.tipo===tipo);
   sel.innerHTML='<option value="">Nenhuma</option>'+pa.map(p=>`<option value="${p.id}">${p.desc} (${fmt(p.valor)})</option>`).join('');
 }
 
