@@ -2317,8 +2317,11 @@ async function syncWriteToSheets(){
   if(!state.user?.planilhaId) return;
   showSyncIndicator('syncing');
   try{
-    const res = await gasCall('saveUserData',{
-      email:state.user.email,
+    // Usa POST com Content-Type: text/plain para evitar CORS preflight
+    // e contornar o limite de tamanho de URL do GET
+    const payload = JSON.stringify({
+      action:    'saveUserData',
+      email:     state.user.email,
       planilhaId:state.user.planilhaId,
       bancos:    JSON.stringify(bancos),
       cartoes:   JSON.stringify(cartoes),
@@ -2330,6 +2333,13 @@ async function syncWriteToSheets(){
       bens:      JSON.stringify(bens),
       investimentos: JSON.stringify(investimentos),
     });
+    const r = await fetch(GAS_URL, {
+      method: 'POST',
+      redirect: 'follow',
+      body: payload,
+      headers: { 'Content-Type': 'text/plain' },
+    });
+    const res = await r.json();
     showSyncIndicator(res.ok ? 'ok' : 'err');
   } catch(e){
     showSyncIndicator('err');
